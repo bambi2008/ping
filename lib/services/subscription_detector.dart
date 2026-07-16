@@ -1,5 +1,5 @@
 import 'dart:math';
-import '../models/subscription_provider.dart';
+import '../models/subscription.dart';
 
 /// Subscription Detection Engine
 /// Analyzes bank transactions to identify recurring subscriptions.
@@ -59,11 +59,14 @@ class SubscriptionDetector {
           name: match?.name ?? _humanizeName(merchant),
           logoUrl: merchant,
           amount: avgAmount,
-          currency: txs.first['currency']?.toString() ?? '€',
+          currency: _normalizeCurrencyCode(txs.first['currency']?.toString() ?? 'EUR'),
           billingCycle: cycle,
           nextBillingDate: _predictNextDate(dates.last, cycle),
           category: match?.category ?? _guessCategory(merchant),
           isActive: true,
+          paymentMethod: 'Bank',
+          source: 'bank',
+          themeColor: match != null ? SubscriptionTheme.match(match.name)?.color : null,
         );
         (match != null ? confirmed : possible).add(sub);
       }
@@ -115,6 +118,22 @@ class SubscriptionDetector {
       .map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '')
       .join(' ')
       .trim();
+
+  String _normalizeCurrencyCode(String raw) {
+    final upper = raw.toUpperCase().trim();
+    if (CurrencyProvider.all.contains(upper)) return upper;
+    // Map common symbols back to codes
+    switch (upper) {
+      case '\$': case 'USD': return 'USD';
+      case '£': case 'GBP': return 'GBP';
+      case '€': case 'EUR': return 'EUR';
+      case 'CHF': return 'CHF';
+      case 'SEK': return 'SEK';
+      case 'NOK': return 'NOK';
+      case 'DKK': return 'DKK';
+      default: return 'EUR';
+    }
+  }
 
   String _guessCategory(String merchant) {
     final m = merchant.toLowerCase();
