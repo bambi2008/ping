@@ -131,7 +131,7 @@ class SubscriptionProvider extends ChangeNotifier {
     _subscriptions.clear();
     _subscriptions.addAll(confirmed);
     _subscriptions.addAll(possible);
-    _scheduleNotifications();
+    scheduleAllNotifications();
   }
 
   void _loadMockTransactionsAndDetect() {
@@ -140,7 +140,7 @@ class SubscriptionProvider extends ChangeNotifier {
     _subscriptions.clear();
     _subscriptions.addAll(confirmed);
     _subscriptions.addAll(possible);
-    _scheduleNotifications();
+    scheduleAllNotifications();
   }
 
   void _loadMockData() {
@@ -164,22 +164,14 @@ class SubscriptionProvider extends ChangeNotifier {
         nextBillingDate: DateTime.now().add(const Duration(days: 15)), category: 'Entertainment', source: 'bank'),
     ]);
     _bankConnected = true;
-    _scheduleNotifications();
     _isLoading = false;
     notifyListeners();
   }
 
   // ── Notifications ──
-  void _scheduleNotifications() {
+  void scheduleAllNotifications() {
     for (final sub in _subscriptions.where((s) => s.isActive)) {
       NotificationService.scheduleBillReminder(sub);
-    }
-    // Also schedule trial reminders for detected subscriptions
-    for (final sub in _subscriptions) {
-      if (sub.isActive && sub.name.toLowerCase().contains('trial')) {
-        NotificationService.scheduleTrialReminder(
-          serviceName: sub.name, trialEnd: sub.nextBillingDate, id: sub.id.hashCode);
-      }
     }
   }
 

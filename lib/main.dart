@@ -4,13 +4,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'models/subscription_provider.dart';
-import 'services/notification_service.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await NotificationService.init();
 
   final prefs = await SharedPreferences.getInstance();
   final hasOnboarded = prefs.getBool('onboarded') ?? false;
