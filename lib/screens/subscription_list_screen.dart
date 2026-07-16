@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/subscription_provider.dart';
 import '../app/theme.dart';
 import 'subscription_detail_screen.dart';
+import 'add_subscription_screen.dart';
 
 class SubscriptionListScreen extends StatelessWidget {
   const SubscriptionListScreen({super.key});
@@ -11,6 +12,13 @@ class SubscriptionListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('All Subscriptions')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddSubscriptionScreen()));
+        },
+        icon: const Icon(Icons.add),
+        label: const Text('Add'),
+      ),
       body: Consumer<SubscriptionProvider>(
         builder: (context, provider, _) {
           final subs = provider.subscriptions;

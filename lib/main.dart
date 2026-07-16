@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'models/subscription_provider.dart';
 import 'services/notification_service.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.init();
 
+  final prefs = await SharedPreferences.getInstance();
+  final hasOnboarded = prefs.getBool('onboarded') ?? false;
+
   runApp(
     ChangeNotifierProvider(
       create: (_) => SubscriptionProvider()..init(),
-      child: const PingApp(),
+      child: PingApp(showOnboarding: !hasOnboarded),
     ),
   );
 }
 
 class PingApp extends StatelessWidget {
-  const PingApp({super.key});
+  final bool showOnboarding;
+  const PingApp({super.key, this.showOnboarding = false});
 
   @override
   Widget build(BuildContext context) {
@@ -35,13 +41,19 @@ class PingApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en'),
-        Locale('de'),
-        Locale('fr'),
-        Locale('es'),
-        Locale('nl'),
+        Locale('en'), Locale('de'), Locale('fr'), Locale('es'), Locale('nl'),
       ],
-      home: const DashboardScreen(),
+      initialRoute: showOnboarding ? '/onboarding' : '/dashboard',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/onboarding':
+            return MaterialPageRoute(builder: (_) => const OnboardingScreen());
+          case '/dashboard':
+            return MaterialPageRoute(builder: (_) => const DashboardScreen());
+          default:
+            return MaterialPageRoute(builder: (_) => const DashboardScreen());
+        }
+      },
     );
   }
 }
