@@ -7,6 +7,8 @@ import '../services/widget_service.dart';
 import 'subscription_list_screen.dart';
 import 'add_subscription_screen.dart';
 import 'pricing_screen.dart';
+import 'settings_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -50,10 +52,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ) : null,
           body: SafeArea(
             child: p.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? _buildSkeleton(context)
                 : p.subscriptions.isEmpty
                     ? _buildEmptyState(context, p)
-                    : CustomScrollView(
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          // Simulate refresh - in production would re-fetch from bank
+                          await Future.delayed(const Duration(milliseconds: 800));
+                        },
+                        child: CustomScrollView(
                         slivers: [
                           _buildHeader(context, p),
                           _buildTotalCard(context, p),
@@ -61,9 +68,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _buildUpcomingSection(context, p),
                         ],
                       ),
+                      ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildSkeleton(BuildContext context) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[300]!,
+      highlightColor: Colors.grey[100]!,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const SizedBox(height: 40),
+          // Hero card skeleton
+          Container(height: 160, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20))),
+          const SizedBox(height: 16),
+          // Stats row
+          Row(children: List.generate(3, (i) => Expanded(child: Container(margin: const EdgeInsets.symmetric(horizontal: 4), height: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)))))),
+          const SizedBox(height: 24),
+          // Section title
+          Container(width: 120, height: 16, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 12),
+          // List tiles
+          ...List.generate(4, (_) => Container(margin: const EdgeInsets.only(bottom: 8), height: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14)))),
+        ]),
+      ),
     );
   }
 
@@ -96,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       actions: [
         if (!p.isPremium)
           TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PricingScreen())), icon: const Icon(Icons.diamond_outlined, size: 18), label: const Text('Premium'), style: TextButton.styleFrom(foregroundColor: PingTheme.primary)),
-        IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.settings_outlined), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))),
       ],
     );
   }
