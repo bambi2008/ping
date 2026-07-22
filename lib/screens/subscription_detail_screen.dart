@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../app/theme.dart';
+import 'cancel_guide_screen.dart';
 
 class SubscriptionDetailScreen extends StatelessWidget {
   final String id;
@@ -53,6 +54,20 @@ class SubscriptionDetailScreen extends StatelessWidget {
             const SizedBox(height: 10),
             _editRow(context, 'Currency', s.currency, CurrencyProvider.all, (v) => p.updateSubscription(id, currency: v)),
             const SizedBox(height: 24),
+            // Cancel guide
+            SizedBox(
+              width: double.infinity, height: 52,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final cancelled = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => CancelGuideScreen(serviceName: s.name)));
+                  if (cancelled == true && context.mounted) { p.toggleSubscription(id); Navigator.pop(context); }
+                },
+                icon: const Icon(Icons.cancel_outlined),
+                label: const Text('Cancel Guide'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.grey[700], padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), side: BorderSide(color: Colors.grey[300]!)),
+              ),
+            ),
+            const SizedBox(height: 10),
             Row(children: [
               Expanded(child: ElevatedButton.icon(
                 onPressed: () { p.toggleSubscription(id); Navigator.pop(context); },
