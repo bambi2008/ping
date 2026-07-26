@@ -11,12 +11,15 @@ class WidgetService {
     required List<Map<String, String>> upcoming,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_key, jsonEncode({
-      'total': totalMonthly, 'currency': currency,
-      'active': activeCount,
-      'upcoming': upcoming.take(4).toList(),
-      'updated': DateTime.now().toIso8601String(),
-    }));
+    await prefs.setString(
+        _key,
+        jsonEncode({
+          'total': totalMonthly,
+          'currency': currency,
+          'active': activeCount,
+          'upcoming': upcoming.take(4).toList(),
+          'updated': DateTime.now().toIso8601String(),
+        }));
   }
 
   static Future<Map<String, dynamic>?> readWidgetData() async {

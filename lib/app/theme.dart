@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class PingTheme {
   static const Color primary = Color(0xFF6C5CE7);
@@ -16,7 +15,6 @@ class PingTheme {
         brightness: Brightness.light,
         colorSchemeSeed: primary,
         scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-        textTheme: GoogleFonts.interTextTheme(),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,
@@ -25,7 +23,8 @@ class PingTheme {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           color: Colors.white,
         ),
       );
@@ -35,7 +34,6 @@ class PingTheme {
         brightness: Brightness.dark,
         colorSchemeSeed: primary,
         scaffoldBackgroundColor: darkBg,
-        textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
         appBarTheme: const AppBarTheme(
           centerTitle: false,
           elevation: 0,
@@ -44,7 +42,8 @@ class PingTheme {
         ),
         cardTheme: CardThemeData(
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           color: darkCard,
         ),
       );

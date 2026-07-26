@@ -1,226 +1,240 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/tink_service.dart';
-import '../services/subscription_detector.dart';
+
 import '../services/notification_service.dart';
-import '../services/api_config.dart';
 import 'subscription.dart';
 
 class SubscriptionProvider extends ChangeNotifier {
-  final TinkService _tink = TinkService();
-  final SubscriptionDetector _detector = SubscriptionDetector();
+  static const _subscriptionsKey = 'subscriptions_v1';
+  static const _currencyKey = 'currency';
+  static const _notificationsKey = 'notifications';
 
   final List<Subscription> _subscriptions = [];
-  String? _tinkUserId;
-  bool _isLoading = false;
-  bool _bankConnected = false;
+  bool _isLoading = true;
   String? _errorMessage;
   String _displayCurrency = 'EUR';
-  bool _isPremium = false;
+  bool _notificationsEnabled = false;
 
-  List<Subscription> get subscriptions => _subscriptions;
+  List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
   bool get isLoading => _isLoading;
-  bool get bankConnected => _bankConnected;
   String? get errorMessage => _errorMessage;
   String get displayCurrency => _displayCurrency;
-  bool get isPremium => _isPremium;
+  bool get notificationsEnabled => _notificationsEnabled;
 
-  double get totalMonthly => _subscriptions.where((s) => s.isActive).fold(0.0, (sum, s) => sum + s.convertedMonthlyAmount(_displayCurrency));
+  double get totalMonthly =>
+      _subscriptions.where((subscription) => subscription.isActive).fold(
+          0,
+          (sum, subscription) =>
+              sum + subscription.convertedMonthlyAmount(_displayCurrency));
   double get totalYearly => totalMonthly * 12;
-  int get activeCount => _subscriptions.where((s) => s.isActive).length;
-  int get pausedCount => _subscriptions.where((s) => !s.isActive).length;
+  int get activeCount =>
+      _subscriptions.where((subscription) => subscription.isActive).length;
+  int get pausedCount => _subscriptions
+      .where((subscription) => subscription.status == SubscriptionStatus.paused)
+      .length;
 
   Map<String, double> get categoryBreakdown {
-    final map = <String, double>{};
-    for (final s in _subscriptions.where((s) => s.isActive)) {
-      map[s.category] = (map[s.category] ?? 0) + s.convertedMonthlyAmount(_displayCurrency);
+    final breakdown = <String, double>{};
+    for (final subscription in _subscriptions.where((item) => item.isActive)) {
+      breakdown[subscription.category] =
+          (breakdown[subscription.category] ?? 0) +
+              subscription.convertedMonthlyAmount(_displayCurrency);
     }
-    return map;
+    return breakdown;
   }
 
   List<Subscription> get upcomingBills {
-    final active = _subscriptions.where((s) => s.isActive).toList();
-    active.sort((a, b) => a.nextBillingDate.compareTo(b.nextBillingDate));
+    final active =
+        _subscriptions.where((subscription) => subscription.isActive).toList()
+          ..sort(
+            (first, second) =>
+                first.nextBillingDate.compareTo(second.nextBillingDate),
+          );
     return active;
   }
 
-  int get dueSoonCount => upcomingBills.where((s) => s.nextBillingDate.difference(DateTime.now()).inDays <= 3).length;
+  int get dueSoonCount {
+    final now = DateTime.now();
+    return upcomingBills.where((subscription) {
+      final days = DateTime(
+        subscription.nextBillingDate.year,
+        subscription.nextBillingDate.month,
+        subscription.nextBillingDate.day,
+      ).difference(DateTime(now.year, now.month, now.day)).inDays;
+      return days >= 0 && days <= 3;
+    }).length;
+  }
 
-  static const paymentMethods = ['Apple Pay', 'PayPal', 'Credit Card', 'Debit Card', 'Bank Transfer', 'SEPA', 'iDEAL', 'Unknown'];
-  static const categories = ['Entertainment', 'Music', 'Cloud', 'Software', 'Health', 'Shopping', 'Food', 'Other'];
+  static const paymentMethods = [
+    'Apple Pay',
+    'PayPal',
+    'Credit Card',
+    'Debit Card',
+    'Bank Transfer',
+    'SEPA',
+    'iDEAL',
+    'Unknown',
+  ];
+  static const categories = [
+    'Entertainment',
+    'Music',
+    'Cloud',
+    'Software',
+    'Health',
+    'Shopping',
+    'Food',
+    'Other',
+  ];
   static const cycles = ['weekly', 'monthly', 'yearly'];
 
-  // ── Init ──
   Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    _displayCurrency = prefs.getString('currency') ?? 'EUR';
-    _isPremium = prefs.getBool('premium') ?? false;
-    if (ApiConfig.useMockData) _loadMockData();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _displayCurrency = prefs.getString(_currencyKey) ?? 'EUR';
+      _notificationsEnabled = prefs.getBool(_notificationsKey) ?? false;
+      final raw = prefs.getString(_subscriptionsKey);
+      if (raw != null) {
+        final decoded = jsonDecode(raw) as List<dynamic>;
+        _subscriptions
+          ..clear()
+          ..addAll(decoded.map(
+            (item) => _enrichSubscription(
+              Subscription.fromJson(item as Map<String, dynamic>),
+            ),
+          ));
+      }
+
+      final changed = _rollForwardBillingDates();
+      if (changed) await _persist();
+      if (_notificationsEnabled) await scheduleAllNotifications();
+    } on FormatException {
+      _errorMessage =
+          'Saved data could not be read. Your subscriptions were not changed.';
+    } catch (error) {
+      _errorMessage = 'Could not load subscriptions: $error';
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
   Future<void> setCurrency(String code) async {
     _displayCurrency = code;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('currency', code);
+    await prefs.setString(_currencyKey, code);
     notifyListeners();
   }
 
-  // ── Bank Connection ──
-  Future<String?> startBankConnection(String externalUserId) async {
-    if (!ApiConfig.useRealApi) {
-      _bankConnected = true;
-      _loadMockTransactionsAndDetect();
-      notifyListeners();
-      return null;
+  Future<bool> setNotificationsEnabled(bool enabled) async {
+    if (enabled) {
+      final granted = await NotificationService.requestPermission();
+      if (!granted) return false;
     }
-    try {
-      _isLoading = true; _errorMessage = null; notifyListeners();
-      _tinkUserId = await _tink.createUser(externalUserId: externalUserId);
-      final authUrl = await _tink.getAuthorizationUrl(_tinkUserId!);
-      _isLoading = false; notifyListeners();
-      return authUrl;
-    } catch (e) {
-      _errorMessage = 'Failed to connect: $e';
-      _isLoading = false; notifyListeners();
-      return null;
-    }
-  }
 
-  Future<void> onBankAuthCallback(String code) async {
-    if (!ApiConfig.useRealApi) return;
-    try {
-      _isLoading = true; notifyListeners();
-      await _tink.exchangeCode(code);
-      _bankConnected = true;
-      await _loadRealTransactions();
-    } catch (e) {
-      _errorMessage = 'Bank auth failed: $e';
-    }
-    _isLoading = false; notifyListeners();
-  }
-
-  Future<void> _loadRealTransactions() async {
-    if (_tinkUserId == null) return;
-    final txs = await _tink.fetchTransactions(userId: _tinkUserId!);
-    final (confirmed, possible) = _detector.detect(txs);
-    _subscriptions.clear();
-    _subscriptions.addAll([...confirmed, ...possible].map(_enrichSubscription));
-    scheduleAllNotifications();
-  }
-
-  void _loadMockTransactionsAndDetect() {
-    final txs = _generateMockTransactions();
-    final (confirmed, possible) = _detector.detect(txs);
-    _subscriptions.clear();
-    _subscriptions.addAll([...confirmed, ...possible].map(_enrichSubscription));
-    scheduleAllNotifications();
-  }
-
-  void _loadMockData() {
-    _subscriptions.clear();
-    _subscriptions.addAll([
-      _enrichSubscription(Subscription(id: 'm1', name: 'Netflix', logoUrl: 'netflix', amount: 13.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 12)), category: 'Entertainment', source: 'bank', paymentMethod: 'Credit Card')),
-      _enrichSubscription(Subscription(id: 'm2', name: 'Spotify', logoUrl: 'spotify', amount: 10.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 5)), category: 'Music', source: 'bank', paymentMethod: 'PayPal')),
-      _enrichSubscription(Subscription(id: 'm3', name: 'Disney+', logoUrl: 'disney', amount: 89.90, billingCycle: 'yearly', nextBillingDate: DateTime.now().add(const Duration(days: 89)), category: 'Entertainment', source: 'bank', paymentMethod: 'Credit Card')),
-      _enrichSubscription(Subscription(id: 'm4', name: 'iCloud+', logoUrl: 'icloud', amount: 2.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 3)), category: 'Cloud', source: 'bank', paymentMethod: 'Apple Pay')),
-      _enrichSubscription(Subscription(id: 'm5', name: 'Adobe CC', logoUrl: 'adobe', amount: 62.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 18)), category: 'Software', isActive: false, source: 'bank', paymentMethod: 'Credit Card')),
-      _enrichSubscription(Subscription(id: 'm6', name: 'Gym', logoUrl: 'gym', amount: 29.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 1)), category: 'Health', source: 'bank', paymentMethod: 'SEPA')),
-      _enrichSubscription(Subscription(id: 'm7', name: 'Amazon Prime', logoUrl: 'amazon', amount: 8.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 22)), category: 'Shopping', source: 'bank', paymentMethod: 'Credit Card')),
-      _enrichSubscription(Subscription(id: 'm8', name: 'YouTube Premium', logoUrl: 'youtube', amount: 12.99, billingCycle: 'monthly', nextBillingDate: DateTime.now().add(const Duration(days: 15)), category: 'Entertainment', source: 'bank', paymentMethod: 'PayPal')),
-    ]);
-    _bankConnected = true;
-    _isLoading = false;
-    notifyListeners();
-  }
-
-  Subscription _enrichSubscription(Subscription s) {
-    final theme = SubscriptionTheme.match(s.name);
-    return Subscription(
-      id: s.id, name: s.name, logoUrl: s.logoUrl, amount: s.amount,
-      currency: s.currency, billingCycle: s.billingCycle,
-      nextBillingDate: s.nextBillingDate, category: s.category,
-      isActive: s.isActive, paymentMethod: s.paymentMethod,
-      pausedUntil: s.pausedUntil, source: s.source,
-      themeColor: theme?.color,
-    );
-  }
-
-  // ── Notifications ──
-  void scheduleAllNotifications() {
-    for (final sub in _subscriptions.where((s) => s.isActive)) {
-      NotificationService.scheduleBillReminder(sub);
-    }
-  }
-
-  // ── CRUD ──
-  void addManual(Subscription sub) {
-    _subscriptions.add(_enrichSubscription(sub));
-    NotificationService.scheduleBillReminder(sub);
-    notifyListeners();
-  }
-
-  void toggleSubscription(String id) {
-    final sub = _subscriptions.firstWhere((s) => s.id == id);
-    sub.isActive = !sub.isActive;
-    if (!sub.isActive) {
-      NotificationService.cancelForSubscription(id);
-    } else {
-      NotificationService.scheduleBillReminder(sub);
-    }
-    notifyListeners();
-  }
-
-  void updateSubscription(String id, {String? name, String? category, String? paymentMethod, String? currency}) {
-    final sub = _subscriptions.firstWhere((s) => s.id == id);
-    if (name != null) { sub.name = name; final t = SubscriptionTheme.match(name); if (t != null) sub.themeColor = t.color; }
-    if (category != null) sub.category = category;
-    if (paymentMethod != null) sub.paymentMethod = paymentMethod;
-    if (currency != null) sub.currency = currency;
-    notifyListeners();
-  }
-
-  void removeSubscription(String id) {
-    _subscriptions.removeWhere((s) => s.id == id);
-    NotificationService.cancelForSubscription(id);
-    notifyListeners();
-  }
-
-  // ── Premium ──
-  Future<void> unlockPremium() async {
-    _isPremium = true;
+    _notificationsEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('premium', true);
+    await prefs.setBool(_notificationsKey, enabled);
+    if (enabled) {
+      await scheduleAllNotifications();
+    } else {
+      await NotificationService.cancelAll();
+    }
+    notifyListeners();
+    return true;
+  }
+
+  Future<void> scheduleAllNotifications() async {
+    if (!_notificationsEnabled) return;
+    await NotificationService.cancelAll();
+    for (final subscription in upcomingBills) {
+      await NotificationService.scheduleBillReminder(subscription);
+    }
+  }
+
+  Future<void> addManual(Subscription subscription) async {
+    final enriched = _enrichSubscription(subscription);
+    _subscriptions.add(enriched);
+    await _persist();
+    if (_notificationsEnabled) {
+      await NotificationService.scheduleBillReminder(enriched);
+    }
     notifyListeners();
   }
 
-  // ── Mock transactions ──
-  List<Map<String, dynamic>> _generateMockTransactions() {
-    final now = DateTime.now();
-    final txs = <Map<String, dynamic>>[];
-    void add(String desc, double amt, int months, int day) {
-      for (int i = months; i >= 0; i--) {
-        final d = DateTime(now.year, now.month - i, day.clamp(1, 28));
-        if (d.isAfter(now)) continue;
-        txs.add({'description': desc, 'amount': amt, 'date': d.toIso8601String(), 'currency': 'EUR'});
-      }
+  Future<void> updateSubscription(
+    String id, {
+    String? name,
+    double? amount,
+    String? billingCycle,
+    DateTime? nextBillingDate,
+    String? category,
+    String? paymentMethod,
+    String? currency,
+    SubscriptionStatus? status,
+  }) async {
+    final subscription = _subscriptions.firstWhere((item) => item.id == id);
+    if (name != null) {
+      subscription
+        ..name = name
+        ..logoUrl = name.toLowerCase();
+      final theme = SubscriptionTheme.match(name);
+      subscription.themeColor = theme?.color;
     }
-    add('Netflix.com', 13.99, 6, 15);
-    add('Spotify', 10.99, 6, 8);
-    add('Disney+', 89.90, 12, 20);
-    add('Apple.com/bill iCloud', 2.99, 5, 1);
-    add('Adobe Systems', 62.99, 8, 12);
-    add('McFit Gym', 29.99, 10, 25);
-    add('Amazon Prime', 8.99, 7, 3);
-    add('YouTube Premium', 12.99, 6, 10);
-    txs.addAll(List.generate(20, (i) => {
-      'description': ['ALDI', 'REWE', 'Shell', 'Starbucks', 'Uber', 'Bolt Food'][i % 6],
-      'amount': [45.23, 33.50, 62.00, 5.40, 12.80, 18.90][i % 6],
-      'date': now.subtract(Duration(days: i * 3 + 1)).toIso8601String(),
-      'currency': 'EUR',
-    }));
-    return txs;
+    if (amount != null) subscription.amount = amount;
+    if (billingCycle != null) subscription.billingCycle = billingCycle;
+    if (nextBillingDate != null) {
+      subscription.nextBillingDate = nextBillingDate;
+    }
+    if (category != null) subscription.category = category;
+    if (paymentMethod != null) subscription.paymentMethod = paymentMethod;
+    if (currency != null) subscription.currency = currency;
+    if (status != null) subscription.status = status;
+
+    if (subscription.isActive) subscription.rollForward(DateTime.now());
+    await _persist();
+    await NotificationService.cancelForSubscription(id);
+    if (_notificationsEnabled && subscription.isActive) {
+      await NotificationService.scheduleBillReminder(subscription);
+    }
+    notifyListeners();
   }
 
-  @override
-  void dispose() { _tink.dispose(); super.dispose(); }
+  Future<void> setStatus(String id, SubscriptionStatus status) =>
+      updateSubscription(id, status: status);
+
+  Future<void> removeSubscription(String id) async {
+    _subscriptions.removeWhere((subscription) => subscription.id == id);
+    await _persist();
+    await NotificationService.cancelForSubscription(id);
+    notifyListeners();
+  }
+
+  Future<void> clearAll() async {
+    _subscriptions.clear();
+    await _persist();
+    await NotificationService.cancelAll();
+    notifyListeners();
+  }
+
+  Subscription _enrichSubscription(Subscription subscription) {
+    subscription.themeColor = SubscriptionTheme.match(subscription.name)?.color;
+    return subscription;
+  }
+
+  bool _rollForwardBillingDates() {
+    var changed = false;
+    for (final subscription in _subscriptions) {
+      changed = subscription.rollForward(DateTime.now()) || changed;
+    }
+    return changed;
+  }
+
+  Future<void> _persist() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = jsonEncode(
+        _subscriptions.map((subscription) => subscription.toJson()).toList());
+    await prefs.setString(_subscriptionsKey, value);
+  }
 }

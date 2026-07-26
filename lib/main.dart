@@ -11,10 +11,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
-  var hasOnboarded = prefs.getBool('onboarded') ?? false;
-
-  // Skip onboarding in debug mode
-  assert(() { hasOnboarded = true; return true; }());
+  final hasOnboarded = prefs.getBool('onboarded') ?? false;
 
   runApp(
     ChangeNotifierProvider(
@@ -42,7 +39,7 @@ class PingApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en'), Locale('de'), Locale('fr'), Locale('es'), Locale('nl'),
+        Locale('en'),
       ],
       initialRoute: showOnboarding ? '/onboarding' : '/dashboard',
       onGenerateRoute: (settings) {
