@@ -198,12 +198,12 @@ class SubscriptionDetailScreen extends StatelessWidget {
                 ),
               )),
               const SizedBox(height: PingTheme.spaceMd),
-              SizedBox(width: double.infinity, height: 52, child: OutlinedButton.icon(
-                onPressed: () async {
+              PressScale(
+                onTap: () async {
+                  HapticFeedback.lightImpact();
                   final cancelled = await Navigator.push<bool>(context,
                       SlideFadeRoute<bool>(page: CancelGuideScreen(serviceName: s.name)));
                   if (cancelled == true && context.mounted) {
-                    // Show celebration
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -220,37 +220,67 @@ class SubscriptionDetailScreen extends StatelessWidget {
                     if (context.mounted) Navigator.pop(context);
                   }
                 },
-                icon: const Icon(Icons.cancel_outlined),
-                label: const Text('Cancel Guide'),
-                style: OutlinedButton.styleFrom(foregroundColor: PingTheme.subtleText(context),
-                    side: BorderSide(color: PingTheme.hairlineBorder(context))),
-              )),
+                child: Container(
+                  width: double.infinity, height: 52,
+                  decoration: BoxDecoration(
+                    color: PingTheme.danger.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                    border: Border.all(color: PingTheme.danger.withValues(alpha: 0.2)),
+                  ),
+                  child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.cancel_outlined, color: PingTheme.danger, size: 20),
+                    SizedBox(width: 8),
+                    Text('Cancel Guide', style: TextStyle(color: PingTheme.danger, fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+                  ]),
+                ),
+              ),
               const SizedBox(height: PingTheme.spaceSm),
               Row(children: [
-                Expanded(child: ElevatedButton.icon(
-                  onPressed: () async {
+                Expanded(child: PressScale(
+                  onTap: () async {
+                    HapticFeedback.mediumImpact();
                     await p.setStatus(id, s.isActive ? SubscriptionStatus.paused : SubscriptionStatus.active);
                     if (context.mounted) Navigator.pop(context);
                   },
-                  icon: Icon(s.isActive ? Icons.pause : Icons.play_arrow),
-                  label: Text(s.isActive ? 'Pause' : 'Resume'),
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: s.isActive ? PingTheme.warning : PingTheme.success,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [
+                        s.isActive ? PingTheme.warning : PingTheme.success,
+                        (s.isActive ? PingTheme.warning : PingTheme.success).withValues(alpha: 0.85),
+                      ]),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                      boxShadow: [BoxShadow(
+                        color: (s.isActive ? PingTheme.warning : PingTheme.success).withValues(alpha: 0.3),
+                        blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(s.isActive ? Icons.pause : Icons.play_arrow, color: Colors.white, size: 20),
+                      const SizedBox(width: 6),
+                      Text(s.isActive ? 'Pause' : 'Resume', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
                 )),
                 const SizedBox(width: PingTheme.spaceMd),
-                Expanded(child: OutlinedButton.icon(
-                  onPressed: () async {
+                Expanded(child: PressScale(
+                  onTap: () async {
+                    HapticFeedback.heavyImpact();
                     await p.removeSubscription(id);
                     if (context.mounted) Navigator.pop(context);
                   },
-                  icon: const Icon(Icons.delete_outline),
-                  label: const Text('Remove'),
-                  style: OutlinedButton.styleFrom(
-                      foregroundColor: PingTheme.danger,
-                      side: const BorderSide(color: PingTheme.danger),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: PingTheme.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                      border: Border.all(color: PingTheme.danger.withValues(alpha: 0.3)),
+                    ),
+                    child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.delete_outline, color: PingTheme.danger, size: 20),
+                      SizedBox(width: 6),
+                      Text('Remove', style: TextStyle(color: PingTheme.danger, fontWeight: FontWeight.w700)),
+                    ]),
+                  ),
                 )),
               ]),
               const SizedBox(height: PingTheme.space2Xl),

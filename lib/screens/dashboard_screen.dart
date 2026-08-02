@@ -400,57 +400,64 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: PingTheme.spaceSm),
-      child: Material(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-          child: Container(
-            padding: const EdgeInsets.all(PingTheme.spaceLg),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-              border: Border.all(color: color.withValues(alpha: 0.12)),
+      child: RepaintBoundary(child: PressScale(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(PingTheme.spaceLg),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft, end: Alignment.bottomRight,
+              colors: [color.withValues(alpha: 0.08), color.withValues(alpha: 0.03)],
             ),
-            child: Row(
-              children: [
+            borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+            border: Border.all(color: color.withValues(alpha: 0.15)),
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)]),
+                  borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+                ),
+                child: Icon(icon, size: 22, color: color),
+              ),
+              const SizedBox(width: PingTheme.spaceMd),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                    style: const TextStyle(
+                      fontSize: PingTheme.textBody,
+                      fontWeight: FontWeight.w700,
+                    )),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                    style: TextStyle(
+                      fontSize: PingTheme.textCaption,
+                      color: PingTheme.subtleText(context),
+                    )),
+                ],
+              )),
+              if (trailing != null)
                 Container(
-                  width: 40, height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceSm, vertical: 4),
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusXs),
                   ),
-                  child: Icon(icon, size: 20, color: color),
-                ),
-                const SizedBox(width: PingTheme.spaceMd),
-                Expanded(child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                      style: const TextStyle(
-                        fontSize: PingTheme.textBody,
-                        fontWeight: FontWeight.w700,
-                      )),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
+                  child: Text(trailing,
                       style: TextStyle(
                         fontSize: PingTheme.textCaption,
-                        color: PingTheme.subtleText(context),
-                      )),
-                  ],
-                )),
-                if (trailing != null)
-                  Text(trailing,
-                      style: TextStyle(
-                        fontSize: PingTheme.textSmall,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: color,
                       )),
-              ],
-            ),
+                ),
+            ],
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -526,24 +533,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _statCard(String label, String value, Color color, IconData icon) {
-    return Container(
+    return RepaintBoundary(child: Container(
       padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceMd, vertical: PingTheme.spaceMd),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [color.withValues(alpha: 0.08), color.withValues(alpha: 0.03)],
+        ),
         borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-        border: Border.all(color: color.withValues(alpha: 0.12))),
+        border: Border.all(color: color.withValues(alpha: 0.15)),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
-          width: 32, height: 32,
+          width: 36, height: 36,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(PingTheme.radiusSm),
-            color: color.withValues(alpha: 0.15)),
-          child: Icon(icon, size: 18, color: color)),
+            gradient: LinearGradient(colors: [color.withValues(alpha: 0.2), color.withValues(alpha: 0.1)]),
+          ),
+          child: Icon(icon, size: 20, color: color)),
         const SizedBox(height: 10),
-        Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: color)),
-        Text(label, style: TextStyle(fontSize: PingTheme.textCaption, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w500)),
+        Text(value, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, color: color, fontFeatures: [FontFeature.tabularFigures()])),
+        Text(label, style: TextStyle(fontSize: PingTheme.textCaption, color: color.withValues(alpha: 0.7), fontWeight: FontWeight.w600)),
       ]),
-    );
+    ));
   }
 
   // ── Trend Chart (fl_chart) ──
@@ -631,32 +644,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           children: entries.take(6).map((entry) {
                             final color = colors[entry.key]!;
                             final pct = (entry.value / total * 100).round();
+                            final barWidth = (entry.value / total).clamp(0.0, 1.0);
                             return Padding(
                               padding: const EdgeInsets.only(bottom: PingTheme.spaceMd),
-                              child: Row(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Container(
-                                    width: 12, height: 12,
-                                    decoration: BoxDecoration(
-                                      color: color,
-                                      borderRadius: BorderRadius.circular(4),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 12, height: 12,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(colors: [color, color.withValues(alpha: 0.7)]),
+                                          borderRadius: BorderRadius.circular(4),
+                                          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                                        ),
+                                      ),
+                                      const SizedBox(width: PingTheme.spaceSm),
+                                      Expanded(
+                                        child: Text(entry.key,
+                                            style: const TextStyle(fontSize: PingTheme.textSmall, fontWeight: FontWeight.w600)),
+                                      ),
+                                      Text('$pct%',
+                                          style: TextStyle(
+                                            fontSize: PingTheme.textCaption,
+                                            color: PingTheme.subtleText(context),
+                                            fontWeight: FontWeight.w700,
+                                          )),
+                                      const SizedBox(width: PingTheme.spaceSm),
+                                      Text('$sym${entry.value.toStringAsFixed(0)}',
+                                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: PingTheme.textSmall,
+                                              fontFeatures: [FontFeature.tabularFigures()])),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween(begin: 0, end: barWidth),
+                                      duration: const Duration(milliseconds: 800),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, w, _) => LinearProgressIndicator(
+                                        value: w,
+                                        minHeight: 4,
+                                        backgroundColor: color.withValues(alpha: 0.08),
+                                        valueColor: AlwaysStoppedAnimation(color),
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(width: PingTheme.spaceSm),
-                                  Expanded(
-                                    child: Text(entry.key,
-                                        style: const TextStyle(fontSize: PingTheme.textSmall, fontWeight: FontWeight.w500)),
-                                  ),
-                                  Text('$pct%',
-                                      style: TextStyle(
-                                        fontSize: PingTheme.textCaption,
-                                        color: PingTheme.subtleText(context),
-                                        fontWeight: FontWeight.w600,
-                                      )),
-                                  const SizedBox(width: PingTheme.spaceSm),
-                                  Text('$sym${entry.value.toStringAsFixed(0)}',
-                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: PingTheme.textSmall,
-                                          fontFeatures: [FontFeature.tabularFigures()])),
                                 ],
                               ),
                             );

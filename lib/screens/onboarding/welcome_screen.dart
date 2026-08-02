@@ -72,32 +72,58 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo
+                  // Logo with pulsing glow
                   ScaleTransition(
                     scale: _logoScale,
-                    child: Container(
-                      width: 100, height: 100,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [PingTheme.primary, PingTheme.primaryLight],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                    child: RepaintBoundary(child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Pulsing glow ring
+                        AnimatedBuilder(
+                          animation: _ctrl,
+                          builder: (context, _) {
+                            final pulse = 0.5 + 0.5 * (_ctrl.value * 3 % 1.0);
+                            return Container(
+                              width: 100 + pulse * 40,
+                              height: 100 + pulse * 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    PingTheme.primary.withValues(alpha: 0.12 * (1 - pulse)),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: PingTheme.primary.withValues(alpha: 0.3),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
+                        // Logo container
+                        Container(
+                          width: 100, height: 100,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [PingTheme.primary, PingTheme.primaryLight],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(28),
+                            boxShadow: [
+                              BoxShadow(
+                                color: PingTheme.primary.withValues(alpha: 0.35),
+                                blurRadius: 28,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.notifications_active_rounded,
-                        size: 52,
-                        color: Colors.white,
-                      ),
-                    ),
+                          child: const Icon(
+                            Icons.notifications_active_rounded,
+                            size: 52,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )),
                   ),
                   const SizedBox(height: PingTheme.space3Xl),
 
