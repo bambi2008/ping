@@ -110,11 +110,23 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
               Text('No subscriptions',
                   style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: PingTheme.spaceLg),
-              FilledButton.icon(
-                  onPressed: () async => await Navigator.push(context,
-                      SlideFadeRoute(page: const AddSubscriptionScreen())),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Add Your First')),
+              PressScale(
+                onTap: () async => await Navigator.push(context,
+                    SlideFadeRoute(page: const AddSubscriptionScreen())),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: PingTheme.space2Xl, vertical: PingTheme.spaceMd),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                    boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.add, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text('Add Your First', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+                  ]),
+                ),
+              ),
             ]),
           ),
         )
@@ -456,10 +468,16 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: PingTheme.danger),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+          PressScale(
+            onTap: () => Navigator.pop(ctx, true),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.danger, PingTheme.danger.withValues(alpha: 0.85)]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+              ),
+              child: const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),

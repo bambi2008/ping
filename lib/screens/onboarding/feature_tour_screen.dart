@@ -139,24 +139,40 @@ class _FeatureTourScreenState extends State<FeatureTourScreen>
               width: double.infinity,
               height: 56,
               child: _currentPage < _pages.length - 1
-                  ? FilledButton(
-                      onPressed: () {
+                  ? PressScale(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
                         _pageCtrl.nextPage(
                           duration: const Duration(milliseconds: 400),
                           curve: Curves.easeInOut,
                         );
                       },
-                      child: const Text('Next',
-                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                          boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                        ),
+                        child: const Center(child: Text('Next',
+                            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white))),
+                      ),
                     )
-                  : FilledButton(
-                      onPressed: () {
+                  : PressScale(
+                      onTap: () {
                         HapticFeedback.mediumImpact();
                         widget.onComplete();
                       },
-                      style: FilledButton.styleFrom(backgroundColor: PingTheme.success),
-                      child: const Text('Let\'s go! 🎉',
-                          style: TextStyle(fontWeight: FontWeight.w800)),
+                      child: Container(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [PingTheme.success, PingTheme.success.withValues(alpha: 0.85)]),
+                          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                          boxShadow: [BoxShadow(color: PingTheme.success.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
+                        ),
+                        child: const Center(child: Text('Let\'s go! 🎉',
+                            style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white))),
+                      ),
                     ),
             ),
           ),

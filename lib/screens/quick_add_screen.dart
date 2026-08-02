@@ -246,8 +246,8 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                 // Add selected
                 Expanded(
                   flex: 2,
-                  child: FilledButton(
-                    onPressed: _selected.isEmpty ? null : () async {
+                  child: PressScale(
+                    onTap: _selected.isEmpty ? null : () async {
                       HapticFeedback.mediumImpact();
                       final provider = context.read<SubscriptionProvider>();
                       for (final id in _selected) {
@@ -267,15 +267,20 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                       }
                       if (mounted) Navigator.pop(context);
                     },
-                    style: FilledButton.styleFrom(
+                    child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
+                      decoration: BoxDecoration(
+                        gradient: _selected.isEmpty ? null : LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                        color: _selected.isEmpty ? PingTheme.subtleText(context) : null,
                         borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                        boxShadow: _selected.isEmpty ? null : [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
                       ),
-                    ),
-                    child: Text(
-                      _selected.isEmpty ? 'Select above' : 'Add ${_selected.length} subscription${_selected.length == 1 ? '' : 's'}',
-                      style: const TextStyle(fontWeight: FontWeight.w700),
+                      child: Center(
+                        child: Text(
+                          _selected.isEmpty ? 'Select above' : 'Add ${_selected.length} subscription${_selected.length == 1 ? '' : 's'}',
+                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
+                      ),
                     ),
                   ),
                 ),

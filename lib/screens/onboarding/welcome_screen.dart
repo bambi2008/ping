@@ -128,22 +128,22 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   FadeTransition(
                     opacity: _ctaFade,
                     child: Column(children: [
-                      SizedBox(
-                        width: double.infinity,
-                        height: 56,
-                        child: FilledButton(
-                          onPressed: () {
-                            HapticFeedback.mediumImpact();
-                            widget.onNext();
-                          },
-                          style: FilledButton.styleFrom(
-                            backgroundColor: PingTheme.primary,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                            ),
+                      PressScale(
+                        onTap: () {
+                          HapticFeedback.mediumImpact();
+                          widget.onNext();
+                        },
+                        child: Container(
+                          width: double.infinity, height: 56,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                            borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                            boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
                           ),
-                          child: const Text('Get Started',
-                            style: TextStyle(fontSize: PingTheme.textBody, fontWeight: FontWeight.w700),
+                          child: const Center(
+                            child: Text('Get Started',
+                              style: TextStyle(fontSize: PingTheme.textBody, fontWeight: FontWeight.w700, color: Colors.white),
+                            ),
                           ),
                         ),
                       ),

@@ -299,8 +299,8 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () async {
+          PressScale(
+            onTap: () async {
               final text = ctrl.text.trim();
               if (text.isEmpty) return;
               final lines = text.split('\n');
@@ -404,8 +404,8 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
-          FilledButton(
-            onPressed: () async {
+          PressScale(
+            onTap: () async {
               await provider.clearAll();
               if (!dialogContext.mounted) return;
               Navigator.pop(dialogContext);
@@ -417,8 +417,14 @@ class SettingsScreen extends StatelessWidget {
                 ),
               );
             },
-            style: FilledButton.styleFrom(backgroundColor: PingTheme.danger),
-            child: const Text('Clear All'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.danger, PingTheme.danger.withValues(alpha: 0.85)]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+              ),
+              child: const Text('Clear All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),
@@ -534,9 +540,16 @@ class SettingsScreen extends StatelessWidget {
           'reminders.',
         ),
         actions: [
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Got it'),
+          PressScale(
+            onTap: () => Navigator.pop(dialogContext),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+              ),
+              child: const Text('Got it', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),
@@ -560,9 +573,16 @@ class SettingsScreen extends StatelessWidget {
             icon: const Icon(Icons.code),
             label: const Text('Open Source'),
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('OK'),
+          PressScale(
+            onTap: () => Navigator.pop(dialogContext),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+              ),
+              child: const Text('OK', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),

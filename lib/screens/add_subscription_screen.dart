@@ -268,9 +268,16 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
-            child: const Text('Add'),
+          PressScale(
+            onTap: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+              ),
+              child: const Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),
