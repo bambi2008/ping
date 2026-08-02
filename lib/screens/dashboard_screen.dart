@@ -264,7 +264,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: () async {
                 HapticFeedback.lightImpact();
                 await Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const EmailScanScreen()));
+                    SlideFadeRoute(page: const EmailScanScreen()));
               },
               icon: const Icon(Icons.mail_outline, size: 18),
               label: const Text('Scan Email'),
@@ -474,9 +474,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             currencySymbol: sym,
             momChange: p.momAvailable ? p.momChange : null,
             onViewAll: () => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen())),
+                context, SlideFadeRoute(page: const SubscriptionListScreen())),
             onCalendar: () => Navigator.push(
-                context, MaterialPageRoute(builder: (_) => const CalendarScreen())),
+                context, SlideFadeRoute(page: const CalendarScreen())),
           ),
           const SizedBox(height: PingTheme.spaceSm),
           // Shareable summary card

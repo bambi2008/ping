@@ -6,6 +6,8 @@ import '../models/subscription.dart';
 import '../models/subscription_provider.dart';
 import '../services/subscription_templates.dart';
 import 'add_subscription_screen.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/page_transitions.dart';
 
 /// 快速添加 — 从模板网格一键选择常见订阅，预填好价格和分类。
 /// 也可以跳到手动添加。
@@ -227,7 +229,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
                       HapticFeedback.lightImpact();
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddSubscriptionScreen()),
+                        SlideFadeRoute(page: const AddSubscriptionScreen()),
                       );
                     },
                     icon: const Icon(Icons.edit, size: 18),

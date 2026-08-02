@@ -10,6 +10,8 @@ import '../providers/auth_provider.dart';
 import '../providers/iap_provider.dart';
 import 'onboarding/paywall_screen.dart';
 import 'email_scan_screen.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/page_transitions.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -444,7 +446,7 @@ class SettingsScreen extends StatelessWidget {
         trailing: const Icon(Icons.chevron_right, size: 20, color: PingTheme.primary),
         onTap: () {
           Navigator.push(context,
-              MaterialPageRoute(builder: (_) => EmailScanScreen()));
+              SlideFadeRoute(page: EmailScanScreen()));
         },
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PingTheme.radiusMd),
@@ -506,7 +508,7 @@ class SettingsScreen extends StatelessWidget {
           trailing: const Icon(Icons.chevron_right, size: 20, color: PingTheme.primary),
           onTap: () {
             Navigator.push(context,
-                MaterialPageRoute(builder: (_) => PaywallScreen(onComplete: () => Navigator.pop(context))));
+                SlideFadeRoute(page: PaywallScreen(onComplete: () => Navigator.pop(context))));
           },
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(PingTheme.radiusMd),

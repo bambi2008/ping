@@ -5,6 +5,9 @@ import '../app/theme.dart';
 import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../widgets/brand_icon.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/page_transitions.dart';
+import '../widgets/odometer_roll.dart';
 import 'subscription_detail_screen.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -72,20 +75,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                         fontWeight: FontWeight.w500,
                       )),
                   const SizedBox(height: 4),
-                  Text('$sym${monthTotal.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: PingTheme.primary,
-                      )),
+                  OdometerRoll(
+                    value: monthTotal,
+                    prefix: sym,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: PingTheme.primary,
+                    ),
+                  ),
                 ]),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text('${bills.length}',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: PingTheme.primary,
-                      )),
+                  OdometerRoll(
+                    value: bills.length.toDouble(),
+                    decimalPlaces: 0,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: PingTheme.primary,
+                    ),
+                  ),
                   Text('bills',
                       style: TextStyle(
                         fontSize: PingTheme.textSmall,
@@ -246,10 +255,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
         borderRadius: BorderRadius.circular(PingTheme.radiusMd),
         border: Border.all(color: PingTheme.hairlineBorder(context)),
       ),
-      child: InkWell(
-        onTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => SubscriptionDetailScreen(id: s.id))),
-        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+      child: PressScale(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(context, SlideFadeRoute(page: SubscriptionDetailScreen(id: s.id)));
+        },
         child: Row(children: [
           BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
           const SizedBox(width: PingTheme.spaceMd),
