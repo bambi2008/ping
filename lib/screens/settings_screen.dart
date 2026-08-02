@@ -193,7 +193,7 @@ class SettingsScreen extends StatelessWidget {
                 subtitle,
                 style: TextStyle(fontSize: 12, color: PingTheme.subtleText(context)),
               ),
-        trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
+        trailing: const Icon(Icons.chevron_right, size: 20, color: PingTheme.primary),
         onTap: onTap,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(PingTheme.radiusMd),

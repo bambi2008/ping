@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 enum SubscriptionStatus {
@@ -300,4 +301,19 @@ class SubscriptionTheme {
     'Food': const Color(0xFF00CCBC),
     'Other': const Color(0xFF6C5CE7),
   };
+
+  /// Returns a CDN URL for the brand's SVG icon (simpleicons.org)
+  /// Returns null if no match found
+  static String? brandIconUrl(String name) {
+    final theme = match(name);
+    if (theme == null) return null;
+    return 'https://cdn.simpleicons.org/${theme.iconName}';
+  }
+
+  /// Returns a CDN URL for the brand's PNG icon (for platforms that don't support SVG)
+  static String? brandPngUrl(String name, {int size = 48}) {
+    final theme = match(name);
+    if (theme == null) return null;
+    return 'https://cdn.simpleicons.org/${theme.iconName}/currentColor/$size';
+  }
 }

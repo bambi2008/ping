@@ -7,6 +7,7 @@ import 'models/subscription_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/subscription_list_screen.dart';
+import 'screens/calendar_screen.dart';
 import 'screens/add_subscription_screen.dart';
 import 'screens/settings_screen.dart';
 import 'package:flutter/services.dart';
@@ -77,6 +78,7 @@ class _MainShellState extends State<_MainShell> {
   late final List<Widget> _screens = [
     const DashboardScreen(),
     const SubscriptionListScreen(),
+    const CalendarScreen(),
     const SettingsScreen(),
   ];
 
@@ -118,6 +120,11 @@ class _MainShellState extends State<_MainShell> {
             icon: Icon(Icons.list_alt_outlined),
             selectedIcon: Icon(Icons.list_alt),
             label: 'Subs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.calendar_month_outlined),
+            selectedIcon: Icon(Icons.calendar_month),
+            label: 'Calendar',
           ),
           NavigationDestination(
             icon: Icon(Icons.settings_outlined),

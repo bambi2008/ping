@@ -26,6 +26,10 @@ class WidgetService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_key, data);
 
+    // Also save simple keys for Android Glance widget
+    await prefs.setString('ping_widget_total', totalMonthly);
+    await prefs.setString('ping_widget_count', activeCount.toString());
+
     // Sync to native App Group for iOS WidgetKit
     try {
       await _channel.invokeMethod('syncWidgetData', {'data': data});

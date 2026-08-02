@@ -1,10 +1,33 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/notification_service.dart';
 import 'subscription.dart';
+
+/// Sort options for subscription list
+enum SortOption { nameAsc, nameDesc, amountDesc, amountAsc, dateAsc, dateDesc }
+
+extension SortOptionLabel on SortOption {
+  String get label => switch (this) {
+        SortOption.nameAsc => 'Name A-Z',
+        SortOption.nameDesc => 'Name Z-A',
+        SortOption.amountDesc => 'Amount: High-Low',
+        SortOption.amountAsc => 'Amount: Low-High',
+        SortOption.dateAsc => 'Next bill: Soonest',
+        SortOption.dateDesc => 'Next bill: Latest',
+      };
+  IconData get icon => switch (this) {
+        SortOption.nameAsc => Icons.sort_by_alpha,
+        SortOption.nameDesc => Icons.sort_by_alpha,
+        SortOption.amountDesc => Icons.attach_money,
+        SortOption.amountAsc => Icons.attach_money,
+        SortOption.dateAsc => Icons.calendar_today,
+        SortOption.dateDesc => Icons.calendar_today,
+      };
+}
 
 class SubscriptionProvider extends ChangeNotifier {
   static const _subscriptionsKey = 'subscriptions_v1';
@@ -12,6 +35,8 @@ class SubscriptionProvider extends ChangeNotifier {
   static const _notificationsKey = 'notifications';
   static const _lastMonthKey = 'last_month_total';
   static const _lastMonthDateKey = 'last_month_date';
+  static const _monthlyHistoryKey = 'monthly_history_v1';
+  static const _priceHistoryKey = 'price_history_v1';
 
   final List<Subscription> _subscriptions = [];
   bool _isLoading = true;
@@ -19,6 +44,17 @@ class SubscriptionProvider extends ChangeNotifier {
   String _displayCurrency = 'EUR';
   bool _notificationsEnabled = false;
   double _lastMonthTotal = 0;
+
+  // ── Sort & Filter State ──
+  SortOption _sortOption = SortOption.dateAsc;
+  String? _filterCategory;
+
+  // ── Monthly History (for trend chart) ──
+  final List<MapEntry<DateTime, double>> _monthlyHistory = [];
+
+  // ── Price Change History ──
+  // Map: subscriptionId → list of (date, oldAmount, newAmount)
+  final Map<String, List<_PriceChange>> _priceHistory = {};
 
   List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
   bool get isLoading => _isLoading;
@@ -28,6 +64,46 @@ class SubscriptionProvider extends ChangeNotifier {
   double get lastMonthTotal => _lastMonthTotal;
   double get momChange => totalMonthly - _lastMonthTotal;
   bool get momAvailable => _lastMonthTotal > 0;
+  SortOption get sortOption => _sortOption;
+  String? get filterCategory => _filterCategory;
+
+  /// Sorted & filtered subscription list
+  List<Subscription> get sortedSubscriptions {
+    var list = _filterCategory == null
+        ? List<Subscription>.from(_subscriptions)
+        : _subscriptions.where((s) => s.category == _filterCategory).toList();
+
+    list.sort((a, b) {
+      switch (_sortOption) {
+        case SortOption.nameAsc:
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        case SortOption.nameDesc:
+          return b.name.toLowerCase().compareTo(a.name.toLowerCase());
+        case SortOption.amountDesc:
+          return b.convertedMonthlyAmount(_displayCurrency)
+              .compareTo(a.convertedMonthlyAmount(_displayCurrency));
+        case SortOption.amountAsc:
+          return a.convertedMonthlyAmount(_displayCurrency)
+              .compareTo(b.convertedMonthlyAmount(_displayCurrency));
+        case SortOption.dateAsc:
+          return a.nextBillingDate.compareTo(b.nextBillingDate);
+        case SortOption.dateDesc:
+          return b.nextBillingDate.compareTo(a.nextBillingDate);
+      }
+    });
+    return list;
+  }
+
+  /// All categories present in subscriptions
+  List<String> get availableCategories =>
+      _subscriptions.map((s) => s.category).toSet().toList()..sort();
+
+  /// Monthly history for trend chart (oldest first)
+  List<MapEntry<DateTime, double>> get monthlyHistory =>
+      List.unmodifiable(_monthlyHistory);
+
+  /// Price changes for a subscription
+  List<_PriceChange>? priceChangesFor(String id) => _priceHistory[id];
 
   double get totalMonthly =>
       _subscriptions.where((subscription) => subscription.isActive).fold(
@@ -73,27 +149,35 @@ class SubscriptionProvider extends ChangeNotifier {
     }).length;
   }
 
+  // ── Bills for a specific month (calendar view) ──
+  List<Subscription> billsForMonth(int year, int month) {
+    return _subscriptions.where((s) {
+      final d = s.nextBillingDate;
+      return s.isActive && d.year == year && d.month == month;
+    }).toList()
+      ..sort((a, b) => a.nextBillingDate.compareTo(b.nextBillingDate));
+  }
+
   static const paymentMethods = [
-    'Apple Pay',
-    'PayPal',
-    'Credit Card',
-    'Debit Card',
-    'Bank Transfer',
-    'SEPA',
-    'iDEAL',
-    'Unknown',
+    'Apple Pay', 'PayPal', 'Credit Card', 'Debit Card',
+    'Bank Transfer', 'SEPA', 'iDEAL', 'Unknown',
   ];
   static const categories = [
-    'Entertainment',
-    'Music',
-    'Cloud',
-    'Software',
-    'Health',
-    'Shopping',
-    'Food',
-    'Other',
+    'Entertainment', 'Music', 'Cloud', 'Software',
+    'Health', 'Shopping', 'Food', 'Other',
   ];
   static const cycles = ['weekly', 'monthly', 'yearly'];
+
+  // ── Sort & Filter Actions ──
+  void setSortOption(SortOption option) {
+    _sortOption = option;
+    notifyListeners();
+  }
+
+  void setFilterCategory(String? category) {
+    _filterCategory = category;
+    notifyListeners();
+  }
 
   Future<void> init() async {
     try {
@@ -112,8 +196,36 @@ class SubscriptionProvider extends ChangeNotifier {
           ));
       }
 
+      // Load monthly history
+      final historyRaw = prefs.getString(_monthlyHistoryKey);
+      if (historyRaw != null) {
+        final historyList = jsonDecode(historyRaw) as List<dynamic>;
+        _monthlyHistory
+          ..clear()
+          ..addAll(historyList.map((e) {
+            final parts = (e as String).split('|');
+            return MapEntry(DateTime.parse(parts[0]), double.parse(parts[1]));
+          }));
+      }
+
+      // Load price history
+      final priceRaw = prefs.getString(_priceHistoryKey);
+      if (priceRaw != null) {
+        final priceMap = jsonDecode(priceRaw) as Map<String, dynamic>;
+        _priceHistory.clear();
+        for (final entry in priceMap.entries) {
+          final changes = (entry.value as List<dynamic>)
+              .map((c) => _PriceChange(
+                    DateTime.parse((c as Map)['date']),
+                    (c['old'] as num).toDouble(),
+                    (c['new'] as num).toDouble(),
+                  ))
+              .toList();
+          _priceHistory[entry.key] = changes;
+        }
+      }
+
       _lastMonthTotal = prefs.getDouble(_lastMonthKey) ?? 0;
-      // Fetch live exchange rates (non-blocking, silent fallback)
       CurrencyProvider.fetchLiveRates();
       _maybeUpdateMonthlySnapshot(prefs);
 
@@ -143,7 +255,6 @@ class SubscriptionProvider extends ChangeNotifier {
       final granted = await NotificationService.requestPermission();
       if (!granted) return false;
     }
-
     _notificationsEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_notificationsKey, enabled);
@@ -193,6 +304,13 @@ class SubscriptionProvider extends ChangeNotifier {
       final theme = SubscriptionTheme.match(name);
       subscription.themeColor = theme?.color;
     }
+    // ── Track price change ──
+    if (amount != null && amount != subscription.amount) {
+      final now = DateTime.now();
+      _priceHistory.putIfAbsent(id, () => []);
+      _priceHistory[id]!.add(_PriceChange(now, subscription.amount, amount));
+      _persistPriceHistory();
+    }
     if (amount != null) subscription.amount = amount;
     if (billingCycle != null) subscription.billingCycle = billingCycle;
     if (nextBillingDate != null) {
@@ -217,14 +335,19 @@ class SubscriptionProvider extends ChangeNotifier {
 
   Future<void> removeSubscription(String id) async {
     _subscriptions.removeWhere((subscription) => subscription.id == id);
+    _priceHistory.remove(id);
     await _persist();
+    await _persistPriceHistory();
     await NotificationService.cancelForSubscription(id);
     notifyListeners();
   }
 
   Future<void> clearAll() async {
     _subscriptions.clear();
+    _priceHistory.clear();
+    _monthlyHistory.clear();
     await _persist();
+    await _persistPriceHistory();
     await NotificationService.cancelAll();
     notifyListeners();
   }
@@ -250,13 +373,52 @@ class SubscriptionProvider extends ChangeNotifier {
     if (lastDate == null ||
         lastDate.month != now.month ||
         lastDate.year != now.year) {
+      // Save current month's total to history before updating
+      if (lastDate != null) {
+        final monthKey = DateTime(lastDate.year, lastDate.month);
+        // Replace if same month exists
+        _monthlyHistory.removeWhere((e) =>
+            e.key.year == monthKey.year && e.key.month == monthKey.month);
+        _monthlyHistory.add(MapEntry(monthKey, totalMonthly));
+        _persistMonthlyHistory();
+      }
       prefs.setDouble(_lastMonthKey, totalMonthly);
       prefs.setString(_lastMonthDateKey, now.toIso8601String());
       _lastMonthTotal = totalMonthly;
     }
   }
 
-  /// Pull-to-refresh: re-evaluate billing dates and persist
+  /// Manually record a monthly snapshot (for testing or explicit capture)
+  void recordMonthlySnapshot() {
+    final now = DateTime.now();
+    final monthKey = DateTime(now.year, now.month);
+    _monthlyHistory.removeWhere(
+        (e) => e.key.year == monthKey.year && e.key.month == monthKey.month);
+    _monthlyHistory.add(MapEntry(monthKey, totalMonthly));
+    _monthlyHistory.sort((a, b) => a.key.compareTo(b.key));
+    _persistMonthlyHistory();
+    notifyListeners();
+  }
+
+  void _persistMonthlyHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = _monthlyHistory
+        .map((e) => '${e.key.toIso8601String()}|${e.value}')
+        .toList();
+    await prefs.setString(_monthlyHistoryKey, jsonEncode(encoded));
+  }
+
+  void _persistPriceHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final encoded = _priceHistory.map((id, changes) => MapEntry(
+          id,
+          changes
+              .map((c) => {'date': c.date.toIso8601String(), 'old': c.oldAmount, 'new': c.newAmount})
+              .toList(),
+        ));
+    await prefs.setString(_priceHistoryKey, jsonEncode(encoded));
+  }
+
   Future<void> refresh() async {
     final changed = _rollForwardBillingDates();
     if (changed) {
@@ -272,4 +434,15 @@ class SubscriptionProvider extends ChangeNotifier {
         _subscriptions.map((subscription) => subscription.toJson()).toList());
     await prefs.setString(_subscriptionsKey, value);
   }
+}
+
+/// Price change record
+class _PriceChange {
+  final DateTime date;
+  final double oldAmount;
+  final double newAmount;
+  _PriceChange(this.date, this.oldAmount, this.newAmount);
+
+  double get delta => newAmount - oldAmount;
+  bool get isIncrease => newAmount > oldAmount;
 }

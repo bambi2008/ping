@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../app/theme.dart';
 import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
-import '../app/theme.dart';
+import '../widgets/brand_icon.dart';
 import 'subscription_detail_screen.dart';
+import 'add_subscription_screen.dart';
 
 class SubscriptionListScreen extends StatefulWidget {
   const SubscriptionListScreen({super.key});
@@ -14,15 +17,25 @@ class SubscriptionListScreen extends StatefulWidget {
 class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
   final _searchCtrl = TextEditingController();
   String _query = '';
+  Timer? _debounce;
 
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _debounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String v) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _query = v.toLowerCase());
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.watch<SubscriptionProvider>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('All Subscriptions'),
@@ -33,7 +46,7 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
                 PingTheme.spaceMd, 0, PingTheme.spaceMd, PingTheme.spaceSm),
             child: TextField(
               controller: _searchCtrl,
-              onChanged: (v) => setState(() => _query = v.toLowerCase()),
+              onChanged: _onSearchChanged,
               decoration: InputDecoration(
                 hintText: 'Search subscriptions...',
                 prefixIcon: const Icon(Icons.search, size: 20),
@@ -59,74 +72,234 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
           ),
         ),
       ),
+      body: CustomScrollView(slivers: [
+        // ── Sort & Filter bar ──
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+                PingTheme.spaceLg, PingTheme.spaceSm, PingTheme.spaceLg, PingTheme.spaceSm),
+            child: Row(children: [
+              // Sort button
+              _sortButton(context, p),
+              const SizedBox(width: PingTheme.spaceSm),
+              // Filter chip
+              _filterChip(context, p),
+            ]),
+          ),
+        ),
 
-      body: Consumer<SubscriptionProvider>(
-        builder: (context, p, _) {
-          final filtered = _query.isEmpty
-              ? p.subscriptions
-              : p.subscriptions
-                  .where((s) =>
-                      s.name.toLowerCase().contains(_query) ||
-                      s.category.toLowerCase().contains(_query))
-                  .toList();
-          final active = filtered.where((s) => s.isActive).toList();
-          final inactive = filtered.where((s) => !s.isActive).toList();
+        // ── List ──
+        ..._buildBody(context, p),
+      ]),
+    );
+  }
 
-          if (filtered.isEmpty && _query.isNotEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.search_off, size: 56, color: PingTheme.subtleText(context)),
-                  const SizedBox(height: PingTheme.spaceMd),
-                  Text('No results for "$_query"',
-                      style: TextStyle(
-                          color: PingTheme.subtleText(context),
-                          fontSize: PingTheme.textBody)),
-                ],
-              ),
-            );
-          }
-          if (p.subscriptions.isEmpty) {
-            return Center(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                  const Icon(Icons.subscriptions_outlined,
-                      size: 64, color: PingTheme.primary),
-                  const SizedBox(height: PingTheme.spaceLg),
-                  Text('No subscriptions',
-                      style: Theme.of(context).textTheme.titleLarge),
-                  const SizedBox(height: PingTheme.spaceLg),
-                  FilledButton.icon(
-                      onPressed: () async => await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const AddSubscriptionScreen())),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Your First')),
-                ]));
-          }
-          return CustomScrollView(
-            slivers: [
-              if (active.isNotEmpty) ...[
-                _sectionHeader(context, 'Active', active.length),
-                SliverList.builder(
-                  itemCount: active.length,
-                  itemBuilder: (context, i) => _tile(context, active[i]),
-                ),
-              ],
-              if (inactive.isNotEmpty) ...[
-                _sectionHeader(context, 'Inactive', inactive.length,
-                    topPadding: PingTheme.space2Xl),
-                SliverList.builder(
-                  itemCount: inactive.length,
-                  itemBuilder: (context, i) => _tile(context, inactive[i]),
-                ),
-              ],
-            ],
-          );
-        },
+  List<Widget> _buildBody(BuildContext context, SubscriptionProvider p) {
+    if (p.subscriptions.isEmpty) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              const Icon(Icons.subscriptions_outlined, size: 64, color: PingTheme.primary),
+              const SizedBox(height: PingTheme.spaceLg),
+              Text('No subscriptions',
+                  style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: PingTheme.spaceLg),
+              FilledButton.icon(
+                  onPressed: () async => await Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const AddSubscriptionScreen())),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Your First')),
+            ]),
+          ),
+        )
+      ];
+    }
+
+    final filtered = _query.isEmpty
+        ? p.sortedSubscriptions
+        : p.sortedSubscriptions
+            .where((s) =>
+                s.name.toLowerCase().contains(_query) ||
+                s.category.toLowerCase().contains(_query))
+            .toList();
+    final active = filtered.where((s) => s.isActive).toList();
+    final inactive = filtered.where((s) => !s.isActive).toList();
+
+    if (filtered.isEmpty && _query.isNotEmpty) {
+      return [
+        SliverFillRemaining(
+          hasScrollBody: false,
+          child: Center(
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.search_off, size: 56, color: PingTheme.subtleText(context)),
+              const SizedBox(height: PingTheme.spaceMd),
+              Text('No results for "$_query"',
+                  style: TextStyle(
+                      color: PingTheme.subtleText(context),
+                      fontSize: PingTheme.textBody)),
+            ]),
+          ),
+        )
+      ];
+    }
+
+    return [
+      if (active.isNotEmpty) ...[
+        _sectionHeader(context, 'Active', active.length),
+        SliverList.builder(
+          itemCount: active.length,
+          itemBuilder: (context, i) => _tile(context, active[i]),
+        ),
+      ],
+      if (inactive.isNotEmpty) ...[
+        _sectionHeader(context, 'Inactive', inactive.length,
+            topPadding: PingTheme.space2Xl),
+        SliverList.builder(
+          itemCount: inactive.length,
+          itemBuilder: (context, i) => _tile(context, inactive[i]),
+        ),
+      ],
+    ];
+  }
+
+  // ── Sort Button ──
+  Widget _sortButton(BuildContext context, SubscriptionProvider p) {
+    return InkWell(
+      onTap: () => _showSortMenu(context, p),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceMd, vertical: 7),
+        decoration: BoxDecoration(
+          color: PingTheme.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(p.sortOption.icon, size: 16, color: PingTheme.primary),
+          const SizedBox(width: 5),
+          Text(p.sortOption.label,
+              style: const TextStyle(
+                fontSize: PingTheme.textSmall,
+                fontWeight: FontWeight.w600,
+                color: PingTheme.primary,
+              )),
+          const Icon(Icons.expand_more, size: 16, color: PingTheme.primary),
+        ]),
+      ),
+    );
+  }
+
+  void _showSortMenu(BuildContext context, SubscriptionProvider p) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(PingTheme.radiusLg)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.all(PingTheme.spaceXl),
+            child: Text('Sort by',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ),
+          ...SortOption.values.map((opt) => RadioListTile<SortOption>(
+                value: opt,
+                groupValue: p.sortOption,
+                activeColor: PingTheme.primary,
+                title: Text(opt.label),
+                onChanged: (v) {
+                  if (v != null) p.setSortOption(v);
+                  Navigator.pop(ctx);
+                },
+              )),
+          const SizedBox(height: PingTheme.spaceSm),
+        ]),
+      ),
+    );
+  }
+
+  // ── Filter Chip ──
+  Widget _filterChip(BuildContext context, SubscriptionProvider p) {
+    if (p.availableCategories.isEmpty) return const SizedBox.shrink();
+    return InkWell(
+      onTap: () => _showFilterMenu(context, p),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceMd, vertical: 7),
+        decoration: BoxDecoration(
+          color: p.filterCategory != null
+              ? PingTheme.secondary.withValues(alpha: 0.12)
+              : Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: p.filterCategory != null
+                ? PingTheme.secondary.withValues(alpha: 0.3)
+                : PingTheme.hairlineBorder(context),
+          ),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.filter_list, size: 16,
+              color: p.filterCategory != null
+                  ? PingTheme.secondary
+                  : PingTheme.subtleText(context)),
+          const SizedBox(width: 5),
+          Text(p.filterCategory ?? 'Filter',
+              style: TextStyle(
+                fontSize: PingTheme.textSmall,
+                fontWeight: FontWeight.w600,
+                color: p.filterCategory != null
+                    ? PingTheme.secondary
+                    : PingTheme.subtleText(context),
+              )),
+          if (p.filterCategory != null) ...[
+            const SizedBox(width: 4),
+            GestureDetector(
+              onTap: () => p.setFilterCategory(null),
+              child: Icon(Icons.close, size: 14,
+                  color: PingTheme.secondary.withValues(alpha: 0.6)),
+            ),
+          ],
+        ]),
+      ),
+    );
+  }
+
+  void _showFilterMenu(BuildContext context, SubscriptionProvider p) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(PingTheme.radiusLg)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Padding(
+            padding: EdgeInsets.all(PingTheme.spaceXl),
+            child: Text('Filter by category',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          ),
+          RadioListTile<String?>(
+            value: null,
+            groupValue: p.filterCategory,
+            activeColor: PingTheme.primary,
+            title: const Text('All categories'),
+            onChanged: (v) {
+              p.setFilterCategory(null);
+              Navigator.pop(ctx);
+            },
+          ),
+          ...p.availableCategories.map((cat) => RadioListTile<String?>(
+                value: cat,
+                groupValue: p.filterCategory,
+                activeColor: PingTheme.primary,
+                title: Text(cat),
+                onChanged: (v) {
+                  p.setFilterCategory(v);
+                  Navigator.pop(ctx);
+                },
+              )),
+          const SizedBox(height: PingTheme.spaceSm),
+        ]),
       ),
     );
   }
@@ -145,30 +318,42 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     );
   }
 
+  // ── Tile with multi-action swipe ──
   Widget _tile(BuildContext context, Subscription s) {
     final themeColor = s.themeColor ??
         SubscriptionTheme.categoryColors[s.category] ??
         PingTheme.primary;
-    final serviceIcon = _getIcon(s.name);
+
     return Dismissible(
       key: Key(s.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-          margin: const EdgeInsets.only(bottom: PingTheme.spaceSm),
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-              color: PingTheme.danger.withValues(alpha: 0.10)),
-          alignment: Alignment.centerRight,
-          padding: const EdgeInsets.only(right: PingTheme.spaceXl),
-          child: const Icon(Icons.pause_circle_outline, color: PingTheme.danger)),
-      confirmDismiss: (_) async {
-        await context.read<SubscriptionProvider>().setStatus(
-              s.id,
-              s.isActive
-                  ? SubscriptionStatus.paused
-                  : SubscriptionStatus.active,
-            );
-        return false;
+      direction: DismissDirection.horizontal,
+      background: _swipeBackground(
+        alignment: Alignment.centerLeft,
+        color: PingTheme.primary,
+        icon: Icons.edit_outlined,
+        label: 'Edit',
+      ),
+      secondaryBackground: _swipeBackground(
+        alignment: Alignment.centerRight,
+        color: PingTheme.danger,
+        icon: Icons.delete_outline,
+        label: 'Delete',
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Edit
+          await Navigator.push(context,
+              MaterialPageRoute(builder: (_) => AddSubscriptionScreen(subscription: s)));
+          return false;
+        } else {
+          // Delete with confirmation
+          final confirmed = await _confirmDelete(context, s.name);
+          if (confirmed && context.mounted) {
+            await context.read<SubscriptionProvider>().removeSubscription(s.id);
+            return false; // Don't actually dismiss, the list will rebuild
+          }
+          return false;
+        }
       },
       child: Container(
         margin: const EdgeInsets.fromLTRB(
@@ -181,13 +366,7 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
             border: Border.all(color: PingTheme.hairlineBorder(context))),
         child: ListTile(
           contentPadding: EdgeInsets.zero,
-          leading: Container(
-              width: 42,
-              height: 42,
-              decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(PingTheme.radiusSm),
-                  color: themeColor.withValues(alpha: 0.12)),
-              child: Icon(serviceIcon, size: 22, color: themeColor)),
+          leading: BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
           title: Text(s.name,
               style: TextStyle(
                   fontSize: PingTheme.textBody,
@@ -203,14 +382,12 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
             if (s.source == 'manual')
               Container(
                   margin: const EdgeInsets.only(right: PingTheme.spaceSm),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                       color: PingTheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(PingTheme.radiusXs)),
                   child: const Text('manual',
-                      style: TextStyle(
-                          fontSize: 10, color: PingTheme.primary))),
+                      style: TextStyle(fontSize: 10, color: PingTheme.primary))),
             Icon(
               s.isActive ? Icons.check_circle : Icons.pause_circle,
               color: s.isActive ? PingTheme.success : PingTheme.subtleText(context),
@@ -224,22 +401,52 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     );
   }
 
-  IconData _getIcon(String name) {
-    const icons = {
-      'netflix': Icons.movie, 'spotify': Icons.music_note,
-      'disney+': Icons.movie_creation, 'icloud+': Icons.cloud,
-      'apple': Icons.apple, 'youtube': Icons.play_circle,
-      'youtube premium': Icons.play_circle, 'amazon prime': Icons.shopping_cart,
-      'adobe cc': Icons.brush, 'google one': Icons.cloud_queue,
-      'microsoft 365': Icons.computer, 'dropbox': Icons.inventory_2,
-      'hbo max': Icons.live_tv, 'gym': Icons.fitness_center,
-      'dazn': Icons.sports_soccer, 'sky': Icons.tv,
-      'deezer': Icons.headphones, 'strava': Icons.directions_run,
-      'deliveroo': Icons.delivery_dining, 'canal+': Icons.movie_filter,
-      'rtl+': Icons.live_tv, 'zalando': Icons.checkroom,
-      'bolt': Icons.electric_bolt, 'notion': Icons.article,
-      'figma': Icons.design_services, 'github': Icons.code, 'gitlab': Icons.code,
-    };
-    return icons[name.toLowerCase()] ?? Icons.subscriptions_rounded;
+  Widget _swipeBackground({
+    required Alignment alignment,
+    required Color color,
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+          PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+      ),
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceXl),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: color, size: 22),
+        const SizedBox(width: 6),
+        Text(label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: PingTheme.textSmall,
+            )),
+      ]),
+    );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context, String name) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete subscription?'),
+        content: Text('Remove "$name" from Ping? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: PingTheme.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 }
