@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../widgets/press_scale.dart';
 
 /// Feature tour — shown after registration + trial activation.
 /// Quick swipeable cards showing what user can do in Ping.

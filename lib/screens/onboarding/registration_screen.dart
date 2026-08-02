@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/press_scale.dart';
 
 /// Registration screen — email, Apple Sign-In, Google Sign-In.
 /// After registration, proceeds to paywall.
@@ -135,17 +136,24 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   ),
                 ),
                 const SizedBox(height: PingTheme.spaceLg),
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: FilledButton.icon(
-                    onPressed: auth.isLoading || !_emailValid ? null : _signInWithEmail,
-                    icon: auth.isLoading
-                        ? const SizedBox(width: 18, height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.arrow_forward),
-                    label: const Text('Continue with Email',
-                        style: TextStyle(fontWeight: FontWeight.w700)),
+                PressScale(
+                  onTap: (auth.isLoading || !_emailValid) ? null : _signInWithEmail,
+                  child: Container(
+                    width: double.infinity, height: 56,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                      boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
+                    ),
+                    child: Center(
+                      child: auth.isLoading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Row(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text('Continue with Email', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white)),
+                            ]),
+                    ),
                   ),
                 ),
                 const SizedBox(height: PingTheme.spaceLg),
@@ -156,24 +164,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
               ] else ...[
                 // ── Apple Sign-In ──
-                SizedBox(
-                  width: double.infinity,
-                  height: 56,
-                  child: FilledButton.icon(
-                    onPressed: auth.isLoading ? null : _signInWithApple,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                      ),
+                PressScale(
+                  onTap: auth.isLoading ? null : _signInWithApple,
+                  child: Container(
+                    width: double.infinity, height: 56,
+                    decoration: BoxDecoration(
+                      color: Colors.black,
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
                     ),
-                    icon: auth.isLoading
-                        ? const SizedBox(width: 18, height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.apple, size: 24),
-                    label: const Text('Continue with Apple',
-                        style: TextStyle(fontWeight: FontWeight.w600)),
+                    child: Center(
+                      child: auth.isLoading
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Row(mainAxisSize: MainAxisSize.min, children: [
+                              Icon(Icons.apple, color: Colors.white, size: 24),
+                              SizedBox(width: 8),
+                              Text('Continue with Apple', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.white)),
+                            ]),
+                    ),
                   ),
                 ),
                 const SizedBox(height: PingTheme.spaceMd),
