@@ -75,8 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     : RefreshIndicator(
                         onRefresh: () async {
                           HapticFeedback.mediumImpact();
-                          await Future.delayed(
-                              const Duration(milliseconds: 800));
+                          await p.refresh();
                         },
                         child: CustomScrollView(
                           slivers: [
@@ -222,7 +221,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             const Text('Monthly spend',
                 style: TextStyle(color: Colors.white70, fontSize: 14)),
-            const Icon(Icons.lock_outline, size: 16, color: Colors.white70),
+            if (p.momAvailable)
+              Builder(builder: (_) {
+                final change = p.momChange;
+                final sym = CurrencyProvider.getSymbol(p.displayCurrency);
+                final isDecrease = change < 0;
+                final absStr = change.abs().toStringAsFixed(2);
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: isDecrease
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.red.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(8)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(
+                      isDecrease ? Icons.arrow_downward : Icons.arrow_upward,
+                      size: 12,
+                      color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent),
+                    const SizedBox(width: 2),
+                    Text(
+                      '${isDecrease ? '-' : '+'}$sym$absStr',
+                      style: TextStyle(
+                        color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12)),
+                  ]),
+                );
+              })
+            else
+              const Icon(Icons.lock_outline, size: 16, color: Colors.white70),
           ]),
           const SizedBox(height: 8),
           Text(

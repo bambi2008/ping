@@ -10,18 +10,24 @@ class SubscriptionProvider extends ChangeNotifier {
   static const _subscriptionsKey = 'subscriptions_v1';
   static const _currencyKey = 'currency';
   static const _notificationsKey = 'notifications';
+  static const _lastMonthKey = 'last_month_total';
+  static const _lastMonthDateKey = 'last_month_date';
 
   final List<Subscription> _subscriptions = [];
   bool _isLoading = true;
   String? _errorMessage;
   String _displayCurrency = 'EUR';
   bool _notificationsEnabled = false;
+  double _lastMonthTotal = 0;
 
   List<Subscription> get subscriptions => List.unmodifiable(_subscriptions);
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String get displayCurrency => _displayCurrency;
   bool get notificationsEnabled => _notificationsEnabled;
+  double get lastMonthTotal => _lastMonthTotal;
+  double get momChange => totalMonthly - _lastMonthTotal;
+  bool get momAvailable => _lastMonthTotal > 0;
 
   double get totalMonthly =>
       _subscriptions.where((subscription) => subscription.isActive).fold(
@@ -105,6 +111,9 @@ class SubscriptionProvider extends ChangeNotifier {
             ),
           ));
       }
+
+      _lastMonthTotal = prefs.getDouble(_lastMonthKey) ?? 0;
+      _maybeUpdateMonthlySnapshot(prefs);
 
       final changed = _rollForwardBillingDates();
       if (changed) await _persist();
@@ -229,6 +238,30 @@ class SubscriptionProvider extends ChangeNotifier {
       changed = subscription.rollForward(DateTime.now()) || changed;
     }
     return changed;
+  }
+
+  void _maybeUpdateMonthlySnapshot(SharedPreferences prefs) {
+    final now = DateTime.now();
+    final lastDateStr = prefs.getString(_lastMonthDateKey);
+    final lastDate = lastDateStr != null ? DateTime.tryParse(lastDateStr) : null;
+
+    if (lastDate == null ||
+        lastDate.month != now.month ||
+        lastDate.year != now.year) {
+      prefs.setDouble(_lastMonthKey, totalMonthly);
+      prefs.setString(_lastMonthDateKey, now.toIso8601String());
+      _lastMonthTotal = totalMonthly;
+    }
+  }
+
+  /// Pull-to-refresh: re-evaluate billing dates and persist
+  Future<void> refresh() async {
+    final changed = _rollForwardBillingDates();
+    if (changed) {
+      await _persist();
+      if (_notificationsEnabled) await scheduleAllNotifications();
+      notifyListeners();
+    }
   }
 
   Future<void> _persist() async {
