@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
 import '../../services/subscription_templates.dart';
+import '../../widgets/fire_particles.dart';
 
 /// 烧钱计数器 — 用户点亮自己用的订阅，看着数字飙升，最后给年度震撼数字。
 /// 替代传统问卷，用视觉冲击做"洗脑"。

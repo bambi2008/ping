@@ -19,6 +19,9 @@ import '../services/subscription_templates.dart';
 import '../widgets/burn_rate_hero.dart';
 import '../widgets/shareable_summary.dart';
 import '../widgets/cancel_celebration.dart';
+import '../widgets/fire_particles.dart';
+import '../widgets/glass_card.dart';
+import '../widgets/page_transitions.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -81,11 +84,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ..._buildInsights(context, p),
-            ],
+          child: RepaintBoundary(
+            child: StaggeredEntrance(
+              children: _buildInsights(context, p),
+            ),
           ),
         ),
       ),
@@ -244,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             FilledButton.icon(
               onPressed: () async {
                 HapticFeedback.lightImpact();
-                await Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickAddScreen()));
+                await Navigator.push(context, SlideFadeRoute(page: const QuickAddScreen()));
               },
               icon: const Icon(Icons.bolt),
               label: const Text('Quick Add'),
@@ -444,12 +446,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         IconButton(
           icon: const Icon(Icons.calendar_month_outlined),
           tooltip: 'Calendar view',
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarScreen())),
+          onPressed: () => Navigator.push(context, SlideFadeRoute(page: const CalendarScreen())),
         ),
         IconButton(
           icon: const Icon(Icons.settings_outlined),
           tooltip: 'Settings',
-          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
+          onPressed: () => Navigator.push(context, SlideFadeRoute(page: const SettingsScreen())),
         ),
       ],
     );
@@ -538,14 +540,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _MoMBadge(change: p.momChange, currencySymbol: sym),
           ]),
           const SizedBox(height: PingTheme.spaceMd),
-          Container(
+          RepaintBoundary(child: Container(
             padding: const EdgeInsets.only(left: 4, right: PingTheme.spaceMd, top: PingTheme.spaceMd),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(PingTheme.radiusLg),
               border: Border.all(color: PingTheme.hairlineBorder(context)),
             ),
-            child: TrendChart(
+            child: RepaintBoundary(child: TrendChart(
               data: history,
               currencySymbol: sym,
               currentMonthTotal: p.totalMonthly,
@@ -622,17 +624,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Upcoming bills', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             TextButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen())),
+              onPressed: () => Navigator.push(context, SlideFadeRoute(page: const SubscriptionListScreen())),
               child: const Text('See all')),
           ]),
         ),
       ),
       SliverList.builder(
         itemCount: bills.length,
-        itemBuilder: (context, index) => _AnimatedSubscriptionTile(
+        itemBuilder: (context, index) => RepaintBoundary(child: _AnimatedSubscriptionTile(
           key: ValueKey(bills[index].id),
           subscription: bills[index], index: index,
-        ),
+        )),
       ),
     ]);
   }
@@ -690,7 +692,7 @@ class _AnimatedSubscriptionTileState extends State<_AnimatedSubscriptionTile>
           child: InkWell(
             onTap: () {
               HapticFeedback.selectionClick();
-              Navigator.push(context, MaterialPageRoute(builder: (_) => SubscriptionDetailScreen(id: s.id)));
+              Navigator.push(context, SlideFadeRoute(page: SubscriptionDetailScreen(id: s.id)));
             },
             borderRadius: BorderRadius.circular(PingTheme.radiusMd),
             child: Row(children: [

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app/theme.dart';
+import 'fire_particles.dart';
 
 /// Burn Rate Hero — 替代普通数字卡，让用户"感受"烧钱速度
 /// 显示: 月费大数字 + "€X.XX/hour" + 可视化烧钱速度条 + 年度总额
@@ -207,6 +208,13 @@ class _BurnRateHeroState extends State<BurnRateHero>
             ),
           ),
 
+          // Subtle fire glow behind number
+          Positioned(
+            top: 40, right: -10, left: -10, bottom: 40,
+            child: RepaintBoundary(
+              child: FireParticles(intensity: 0.15),
+            ),
+          ),
           // Glow overlay
           Positioned(
             top: -20, right: -20,

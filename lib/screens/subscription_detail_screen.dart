@@ -4,6 +4,9 @@ import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../app/theme.dart';
 import '../widgets/brand_icon.dart';
+import '../widgets/glass_card.dart';
+import '../widgets/cancel_celebration.dart';
+import '../widgets/page_transitions.dart';
 import 'add_subscription_screen.dart';
 import 'cancel_guide_screen.dart';
 
@@ -174,8 +177,21 @@ class SubscriptionDetailScreen extends StatelessWidget {
               SizedBox(width: double.infinity, height: 52, child: OutlinedButton.icon(
                 onPressed: () async {
                   final cancelled = await Navigator.push<bool>(context,
-                      MaterialPageRoute(builder: (_) => CancelGuideScreen(serviceName: s.name)));
+                      SlideFadeRoute<bool>(page: CancelGuideScreen(serviceName: s.name)));
                   if (cancelled == true && context.mounted) {
+                    // Show celebration
+                    showDialog(
+                      context: context,
+                      barrierDismissible: false,
+                      builder: (ctx) => CancelCelebration(
+                        subscriptionName: s.name,
+                        monthlyAmount: s.amount,
+                        currencySymbol: s.currencySymbol,
+                        onDismiss: () {
+                          Navigator.of(ctx).pop();
+                        },
+                      ),
+                    );
                     await p.setStatus(id, SubscriptionStatus.cancelled);
                     if (context.mounted) Navigator.pop(context);
                   }
