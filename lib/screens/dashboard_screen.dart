@@ -23,6 +23,8 @@ import '../widgets/fire_particles.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/page_transitions.dart';
 import '../widgets/spring_refresh.dart';
+import '../widgets/animated_donut.dart';
+import '../widgets/press_scale.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -558,12 +560,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ── Category Breakdown ──
+  // ── Category Breakdown — Animated Donut ──
   Widget _buildCategoryBreakdown(BuildContext context, SubscriptionProvider p) {
     final entries = p.categoryBreakdown.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
-    final maximum = entries.isEmpty ? 1.0 : entries.first.value;
     final sym = CurrencyProvider.getSymbol(p.displayCurrency);
+    final total = p.totalMonthly;
+    final colors = <String, Color>{};
+    final defaultColors = [
+      PingTheme.primary, PingTheme.secondary, PingTheme.warning,
+      PingTheme.danger, PingTheme.success, const Color(0xFF6C5CE7),
+    ];
+    for (int i = 0; i < entries.length; i++) {
+      colors[entries[i].key] = SubscriptionTheme.categoryColors[entries[i].key] ?? defaultColors[i % defaultColors.length];
+    }
+
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceLg, vertical: PingTheme.spaceSm),
@@ -572,7 +583,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: PingTheme.spaceMd),
           Container(
-            padding: const EdgeInsets.all(PingTheme.spaceLg),
+            padding: const EdgeInsets.all(PingTheme.space2Xl),
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(PingTheme.radiusLg),
@@ -582,32 +593,59 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     padding: const EdgeInsets.all(20),
                     child: Text('No data yet',
                         style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textSmall))))
-                : Column(children: entries.map((entry) {
-                    final color = SubscriptionTheme.categoryColors[entry.key] ?? PingTheme.primary;
-                    final pct = (entry.value / maximum).clamp(0.0, 1.0);
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: PingTheme.spaceMd),
-                      child: Column(children: [
-                        Row(children: [
-                          Container(width: 10, height: 10,
-                            decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
-                          const SizedBox(width: PingTheme.spaceSm),
-                          Expanded(child: Text(entry.key, style: const TextStyle(fontSize: PingTheme.textSmall, fontWeight: FontWeight.w500))),
-                          Text('$sym${entry.value.toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: PingTheme.textSmall)),
-                        ]),
-                        const SizedBox(height: 6),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(PingTheme.radiusSm),
-                          child: LinearProgressIndicator(
-                            value: pct, minHeight: 7,
-                            borderRadius: BorderRadius.circular(PingTheme.radiusSm),
-                            color: color, backgroundColor: color.withValues(alpha: 0.10),
-                          ),
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Donut chart
+                      AnimatedDonut(
+                        data: p.categoryBreakdown,
+                        colors: colors,
+                        size: 140,
+                        strokeWidth: 16,
+                        centerLabel: '$sym${total.toStringAsFixed(0)}',
+                        centerSubLabel: '/mo',
+                      ),
+                      const SizedBox(width: PingTheme.space2Xl),
+                      // Legend
+                      Expanded(
+                        child: Column(
+                          children: entries.take(6).map((entry) {
+                            final color = colors[entry.key]!;
+                            final pct = (entry.value / total * 100).round();
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: PingTheme.spaceMd),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 12, height: 12,
+                                    decoration: BoxDecoration(
+                                      color: color,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                  ),
+                                  const SizedBox(width: PingTheme.spaceSm),
+                                  Expanded(
+                                    child: Text(entry.key,
+                                        style: const TextStyle(fontSize: PingTheme.textSmall, fontWeight: FontWeight.w500)),
+                                  ),
+                                  Text('$pct%',
+                                      style: TextStyle(
+                                        fontSize: PingTheme.textCaption,
+                                        color: PingTheme.subtleText(context),
+                                        fontWeight: FontWeight.w600,
+                                      )),
+                                  const SizedBox(width: PingTheme.spaceSm),
+                                  Text('$sym${entry.value.toStringAsFixed(0)}',
+                                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: PingTheme.textSmall,
+                                          fontFeatures: [FontFeature.tabularFigures()])),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ),
-                      ]),
-                    );
-                  }).toList()),
+                      ),
+                    ],
+                  ),
           ),
         ]),
       ),

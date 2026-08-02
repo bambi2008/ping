@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app/theme.dart';
 import 'fire_particles.dart';
+import 'odometer_roll.dart';
 
 /// Burn Rate Hero — 替代普通数字卡，让用户"感受"烧钱速度
 /// 显示: 月费大数字 + "€X.XX/hour" + 可视化烧钱速度条 + 年度总额
@@ -84,14 +85,12 @@ class _BurnRateHeroState extends State<BurnRateHero>
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: isDark
-                    ? [const Color(0xFF1A1A2E), const Color(0xFF252540)]
-                    : [PingTheme.primary, PingTheme.primaryLight],
+                colors: _spendGradient(isDark, widget.monthlyTotal),
               ),
               borderRadius: BorderRadius.circular(PingTheme.radiusXl),
               boxShadow: [
                 BoxShadow(
-                  color: PingTheme.primary.withValues(alpha: isDark ? 0.3 : 0.25),
+                  color: _spendColor(widget.monthlyTotal).withValues(alpha: isDark ? 0.3 : 0.25),
                   blurRadius: 24,
                   offset: const Offset(0, 10),
                 ),
@@ -110,8 +109,8 @@ class _BurnRateHeroState extends State<BurnRateHero>
                         AnimatedBuilder(
                           animation: _pulseCtrl,
                           builder: (context, _) => Opacity(
-                            opacity: 0.6 + _pulseCtrl.value * 0.4,
-                            child: const Text('🔥', style: TextStyle(fontSize: 16)),
+                            opacity: 0.7 + _pulseCtrl.value * 0.3,
+                            child: const Icon(Icons.local_fire_department, size: 16, color: Colors.orangeAccent),
                           ),
                         ),
                         const SizedBox(width: 6),
@@ -132,11 +131,12 @@ class _BurnRateHeroState extends State<BurnRateHero>
 
                 const SizedBox(height: PingTheme.spaceSm),
 
-                // Big number
+                // Big number — OdometerRoll with GPU-accelerated digit animation
                 AnimatedBuilder(
                   animation: _countAnim,
-                  builder: (context, _) => Text(
-                    '${widget.currencySymbol}${_countAnim.value.toStringAsFixed(2)}',
+                  builder: (context, _) => OdometerRoll(
+                    value: _countAnim.value,
+                    prefix: widget.currencySymbol,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 48,
@@ -177,13 +177,17 @@ class _BurnRateHeroState extends State<BurnRateHero>
                             fontWeight: FontWeight.w500,
                           )),
                       const Spacer(),
-                      Text('${widget.currencySymbol}${widget.yearlyTotal.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: PingTheme.textBody,
-                            fontWeight: FontWeight.w700,
-                            fontFeatures: [FontFeature.tabularFigures()],
-                          )),
+                      OdometerRoll(
+                        value: widget.yearlyTotal,
+                        decimalPlaces: 0,
+                        prefix: widget.currencySymbol,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: PingTheme.textBody,
+                          fontWeight: FontWeight.w700,
+                          fontFeatures: [FontFeature.tabularFigures()],
+                        ),
+                      ),
                       const SizedBox(width: PingTheme.spaceSm),
                       Text('· ${widget.activeCount} active',
                           style: TextStyle(
@@ -212,7 +216,7 @@ class _BurnRateHeroState extends State<BurnRateHero>
           Positioned(
             top: 40, right: -10, left: -10, bottom: 40,
             child: RepaintBoundary(
-              child: FireParticles(intensity: 0.15),
+              child: FireParticles(intensity: widget.monthlyTotal > 100 ? 0.35 : (widget.monthlyTotal > 50 ? 0.25 : 0.15)),
             ),
           ),
           // Glow overlay
@@ -285,6 +289,22 @@ class _BurnRateHeroState extends State<BurnRateHero>
       ),
     );
   }
+  // 消费等级颜色 — 低=绿, 中=橙, 高=红
+  static Color _spendColor(double monthly) {
+    if (monthly < 30) return const Color(0xFF00B894); // green
+    if (monthly < 80) return PingTheme.primary; // purple
+    if (monthly < 200) return const Color(0xFFE17055); // orange
+    return const Color(0xFFD63031); // red
+  }
+
+  static List<Color> _spendGradient(bool isDark, double monthly) {
+    final base = _spendColor(monthly);
+    if (isDark) {
+      return [base.withValues(alpha: 0.15), base.withValues(alpha: 0.05)];
+    }
+    return [base, base.withValues(alpha: 0.7)];
+  }
+
 }
 
 class _MoMBadge extends StatelessWidget {

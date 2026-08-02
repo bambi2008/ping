@@ -7,6 +7,7 @@ import '../models/subscription.dart';
 import '../widgets/brand_icon.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/page_transitions.dart';
+import '../widgets/press_scale.dart';
 import '../widgets/cancel_celebration.dart';
 import 'subscription_detail_screen.dart';
 import 'add_subscription_screen.dart';
@@ -363,10 +364,12 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     ];
 
     return RepaintBoundary(
-      child: SwipeToReveal(
-        actions: actions,
-        revealWidth: 72,
-        child: GestureDetector(
+      child: ElasticAppear(
+        delay: Duration(milliseconds: (i * 60).clamp(0, 300)),
+        child: SwipeToReveal(
+          actions: actions,
+          revealWidth: 72,
+        child: PressScale(
           onTap: () {
             HapticFeedback.selectionClick();
             Navigator.push(context,

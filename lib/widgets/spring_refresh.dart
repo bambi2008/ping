@@ -137,40 +137,33 @@ class _RefreshPainter extends CustomPainter {
 
     if (radius < 2) return;
 
-    // Ping logo circle
-    canvas.save();
-    canvas.translate(cx, cy);
-    canvas.rotate(rotation);
-
     // Background circle with gradient
     final paint = Paint()
       ..shader = LinearGradient(
         colors: [PingTheme.primary, PingTheme.primaryLight],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
-    canvas.drawCircle(Offset.zero, radius, paint);
+      ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: radius));
+    canvas.drawCircle(Offset(cx, cy), radius, paint);
 
-    // "P" text — 用 drawRect 模拟 (避免文字渲染开销)
-    final pPaint = Paint()..color = Colors.white;
-    final pWidth = radius * 0.5;
-    final pHeight = radius * 0.7;
-    // P 的竖线
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(-radius * 0.15, 0), width: pWidth * 0.4, height: pHeight),
-        const Radius.circular(2),
+    // "P" 用 TextPainter 渲染 — 只在需要时构建（刷新中旋转）
+    // TextPainter 会缓存字形，多次 paint 开销极小
+    final tp = TextPainter(
+      text: const TextSpan(
+        text: 'P',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
       ),
-      pPaint,
+      textDirection: TextDirection.ltr,
     );
-    // P 的上半圆
-    canvas.drawArc(
-      Rect.fromCenter(center: Offset(radius * 0.05, -radius * 0.25), width: pWidth * 0.8, height: pHeight * 0.5),
-      0,
-      3.14159,
-      false,
-      pPaint..style = PaintingStyle.fill,
-    );
-
+    tp.layout();
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(rotation);
+    tp.paint(canvas, Offset(-tp.width / 2, -tp.height / 2));
     canvas.restore();
+    tp.dispose();
 
     // 进度弧（非刷新时）
     if (!isRefreshing && progress > 0.1) {
