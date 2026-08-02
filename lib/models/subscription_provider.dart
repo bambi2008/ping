@@ -117,6 +117,15 @@ class SubscriptionProvider extends ChangeNotifier {
       .where((subscription) => subscription.status == SubscriptionStatus.paused)
       .length;
 
+  // 已取消订阅的年度省钱总额
+  double get cancelledSavings => _subscriptions
+      .where((s) => s.status == SubscriptionStatus.cancelled)
+      .fold(0.0, (sum, s) => sum + s.convertedMonthlyAmount(_displayCurrency) * 12);
+
+  int get cancelledCount => _subscriptions
+      .where((s) => s.status == SubscriptionStatus.cancelled)
+      .length;
+
   Map<String, double> get categoryBreakdown {
     final breakdown = <String, double>{};
     for (final subscription in _subscriptions.where((item) => item.isActive)) {

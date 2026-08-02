@@ -25,6 +25,8 @@ import '../widgets/page_transitions.dart';
 import '../widgets/spring_refresh.dart';
 import '../widgets/animated_donut.dart';
 import '../widgets/press_scale.dart';
+import '../widgets/bill_forecast_strip.dart';
+import '../widgets/savings_counter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -727,12 +729,11 @@ class _AnimatedSubscriptionTileState extends State<_AnimatedSubscriptionTile>
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(PingTheme.radiusMd),
             border: Border.all(color: PingTheme.hairlineBorder(context))),
-          child: InkWell(
+          child: PressScale(
             onTap: () {
               HapticFeedback.selectionClick();
               Navigator.push(context, SlideFadeRoute(page: SubscriptionDetailScreen(id: s.id)));
             },
-            borderRadius: BorderRadius.circular(PingTheme.radiusMd),
             child: Row(children: [
               BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
               const SizedBox(width: PingTheme.spaceMd),

@@ -183,12 +183,30 @@ class _SwipeToRevealState extends State<SwipeToReveal>
   late Animation<double> _anim;
   double _dragExtent = 0;
 
+  bool _hintShown = false;
+
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
     _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack);
     _ctrl.value = 0;
+
+    // Subtle swipe hint — nudge left 20px then back, once, after 800ms delay
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted && !_hintShown) {
+        setState(() => _hintShown = true);
+        _dragExtent = -25;
+        _ctrl.animateTo(0.15).then((_) {
+          if (mounted) {
+            _ctrl.animateTo(0);
+            Future.delayed(const Duration(milliseconds: 200), () {
+              if (mounted) setState(() => _dragExtent = 0);
+            });
+          }
+        });
+      }
+    });
   }
 
   @override
