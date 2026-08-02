@@ -10,6 +10,7 @@ import 'money_counter_screen.dart';
 import 'registration_screen.dart';
 import 'paywall_screen.dart';
 import 'feature_tour_screen.dart';
+import '../email_scan_screen.dart';
 import '../../models/subscription_provider.dart';
 import '../../models/subscription.dart';
 import '../../services/subscription_templates.dart';
@@ -98,10 +99,16 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
 
       case _OnboardingStep.counter:
         return MoneyCounterScreen(
-          onComplete: () => _goToStep(_OnboardingStep.registration),
+          onComplete: () => _goToStep(_OnboardingStep.emailScan),
           onEstimate: (monthly, selectedIds) {
             _selectedTemplateIds = selectedIds;
           },
+        );
+
+      case _OnboardingStep.emailScan:
+        return EmailScanScreen(
+          isFromOnboarding: true,
+          onComplete: () => _goToStep(_OnboardingStep.registration),
         );
 
       case _OnboardingStep.registration:
@@ -116,4 +123,4 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 }
 
-enum _OnboardingStep { welcome, counter, registration, paywall, tour }
+enum _OnboardingStep { welcome, counter, emailScan, registration, paywall, tour }

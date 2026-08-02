@@ -10,6 +10,7 @@ import 'screens/onboarding/onboarding_flow.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/subscription_list_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/splash_screen.dart';
 import 'screens/quick_add_screen.dart';
 import 'screens/add_subscription_screen.dart';
 import 'screens/settings_screen.dart';
@@ -34,12 +35,28 @@ void main() async {
   );
 }
 
-class PingApp extends StatelessWidget {
+class PingApp extends StatefulWidget {
   final bool showOnboarding;
   const PingApp({super.key, this.showOnboarding = false});
 
   @override
+  State<PingApp> createState() => _PingAppState();
+}
+
+class _PingAppState extends State<PingApp> {
+  bool _showSplash = true;
+
+  @override
   Widget build(BuildContext context) {
+    if (_showSplash) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: PingTheme.light,
+        darkTheme: PingTheme.dark,
+        themeMode: ThemeMode.system,
+        home: SplashScreen(onComplete: () => setState(() => _showSplash = false)),
+      );
+    }
     return MaterialApp(
       title: 'Ping — Subscription Tracker',
       debugShowCheckedModeBanner: false,
@@ -56,7 +73,7 @@ class PingApp extends StatelessWidget {
         Locale('en'),
         Locale('zh'),
       ],
-      home: showOnboarding
+      home: widget.showOnboarding
           ? OnboardingFlow(onComplete: () => _navigateToHome(context))
           : const _MainShell(),
     );

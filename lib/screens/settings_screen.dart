@@ -9,6 +9,7 @@ import '../models/subscription_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/iap_provider.dart';
 import 'onboarding/paywall_screen.dart';
+import 'email_scan_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -123,6 +124,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _confirmClear(context, provider),
             isDestructive: true,
           ),
+          const SizedBox(height: PingTheme.spaceSm),
+          _section('Auto-detect'),
+          _emailScanTile(context),
           const SizedBox(height: PingTheme.spaceSm),
           _section('Subscription'),
           _subscriptionStatus(context),
@@ -415,6 +419,36 @@ class SettingsScreen extends StatelessWidget {
             child: const Text('Clear All'),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _emailScanTile(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+      ),
+      child: ListTile(
+        leading: Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(
+            color: PingTheme.primary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+          ),
+          child: const Icon(Icons.mail_outline, size: 20, color: PingTheme.primary),
+        ),
+        title: const Text('Scan emails for subscriptions'),
+        subtitle: Text('Auto-detect subscriptions from receipts',
+            style: TextStyle(fontSize: PingTheme.textCaption, color: PingTheme.subtleText(context))),
+        trailing: const Icon(Icons.chevron_right, size: 20, color: PingTheme.primary),
+        onTap: () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (_) => EmailScanScreen()));
+        },
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+        ),
       ),
     );
   }
