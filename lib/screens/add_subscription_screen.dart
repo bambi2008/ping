@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../app/theme.dart';
 import '../models/subscription_provider.dart';
@@ -305,9 +306,17 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
     );
     await provider.addManual(sub);
     if (!mounted) return;
+    // Haptic + animated success feedback
+    HapticFeedback.mediumImpact();
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('✅ ${sub.name} added'),
-        behavior: SnackBarBehavior.floating));
+        content: Row(children: [
+          const Icon(Icons.check_circle, color: PingTheme.success, size: 20),
+          const SizedBox(width: 8),
+          Text('${sub.name} added'),
+        ]),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(milliseconds: 1500),
+    ));
     Navigator.pop(context);
   }
 }

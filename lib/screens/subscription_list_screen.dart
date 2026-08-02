@@ -90,23 +90,38 @@ class SubscriptionListScreen extends StatelessWidget {
                       label: const Text('Add Your First')),
                 ]));
           }
-          return ListView(padding: const EdgeInsets.all(16), children: [
-            if (active.isNotEmpty) ...[
-              Text('Active (${active.length})',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.grey[600], fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              ...active.map((s) => _tile(context, s)),
+          return CustomScrollView(
+            slivers: [
+              if (active.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                    child: Text('Active (${active.length})',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                SliverList.builder(
+                  itemCount: active.length,
+                  itemBuilder: (context, i) => _tile(context, active[i]),
+                ),
+              ],
+              if (inactive.isNotEmpty) ...[
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                    child: Text('Inactive (${inactive.length})',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                SliverList.builder(
+                  itemCount: inactive.length,
+                  itemBuilder: (context, i) => _tile(context, inactive[i]),
+                ),
+              ],
             ],
-            if (inactive.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              Text('Inactive (${inactive.length})',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.grey[600], fontWeight: FontWeight.w600)),
-              const SizedBox(height: 8),
-              ...inactive.map((s) => _tile(context, s)),
-            ],
-          ]);
+          );
         },
       ),
     );

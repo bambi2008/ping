@@ -252,63 +252,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTotalCard(BuildContext context, SubscriptionProvider p) {
+    final sym = CurrencyProvider.getSymbol(p.displayCurrency);
     return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-            gradient: const LinearGradient(
-                colors: [PingTheme.primary, Color(0xFFA29BFE)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight),
-            borderRadius: BorderRadius.circular(20)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            const Text('Monthly spend',
-                style: TextStyle(color: Colors.white70, fontSize: 14)),
-            if (p.momAvailable)
-              Builder(builder: (_) {
-                final change = p.momChange;
-                final sym = CurrencyProvider.getSymbol(p.displayCurrency);
-                final isDecrease = change < 0;
-                final absStr = change.abs().toStringAsFixed(2);
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDecrease
-                        ? Colors.green.withValues(alpha: 0.3)
-                        : Colors.red.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(8)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(
-                      isDecrease ? Icons.arrow_downward : Icons.arrow_upward,
-                      size: 12,
-                      color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent),
-                    const SizedBox(width: 2),
-                    Text(
-                      '${isDecrease ? '-' : '+'}$sym$absStr',
-                      style: TextStyle(
-                        color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12)),
-                  ]),
-                );
-              })
-            else
-              const Icon(Icons.lock_outline, size: 16, color: Colors.white70),
-          ]),
-          const SizedBox(height: 8),
-          Text(
-              '${CurrencyProvider.getSymbol(p.displayCurrency)}${p.totalMonthly.toStringAsFixed(2)}',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 42,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -1)),
-          const SizedBox(height: 4),
-          Text(
-              '${CurrencyProvider.getSymbol(p.displayCurrency)}${p.totalYearly.toStringAsFixed(0)} / year  ·  ${p.activeCount} active subs',
-              style: const TextStyle(color: Colors.white60, fontSize: 13)),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: p.totalMonthly),
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        builder: (context, value, _) => Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                  colors: [PingTheme.primary, Color(0xFFA29BFE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(20)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              const Text('Monthly spend',
+                  style: TextStyle(color: Colors.white70, fontSize: 14)),
+              if (p.momAvailable)
+                Builder(builder: (_) {
+                    final change = p.momChange;
+                    final isDecrease = change < 0;
+                    final absStr = change.abs().toStringAsFixed(2);
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isDecrease
+                            ? Colors.green.withValues(alpha: 0.3)
+                            : Colors.red.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                          isDecrease ? Icons.arrow_downward : Icons.arrow_upward,
+                          size: 12,
+                          color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${isDecrease ? '-' : '+'}$sym$absStr',
+                          style: TextStyle(
+                            color: isDecrease ? const Color(0xFF2ED573) : Colors.redAccent,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12)),
+                      ]),
+                    );
+                  })
+                else
+                  const Icon(Icons.lock_outline, size: 16, color: Colors.white70),
+            ]),
+            const SizedBox(height: 8),
+            Text(
+                '$sym${value.toStringAsFixed(2)}',
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -1)),
+            const SizedBox(height: 4),
+            Text(
+                '$sym${p.totalYearly.toStringAsFixed(0)} / year  ·  ${p.activeCount} active subs',
+                style: const TextStyle(color: Colors.white60, fontSize: 13)),
           const SizedBox(height: 16),
           Row(children: [
             _pillBtn(
@@ -319,8 +323,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     MaterialPageRoute(
                         builder: (_) => const SubscriptionListScreen()))),
           ]),
-        ]),
+        ],
       ),
+    ),
     );
   }
 
@@ -444,29 +449,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildUpcomingSection(BuildContext context, SubscriptionProvider p) {
-    return SliverToBoxAdapter(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Upcoming bills',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w700)),
-              TextButton(
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const SubscriptionListScreen())),
-                  child: const Text('See all')),
-            ]),
-            const SizedBox(height: 8),
-            ...p.upcomingBills
-                .take(6)
-                .map((s) => _subscriptionTile(context, s)),
-          ])),
+    final bills = p.upcomingBills.take(6).toList();
+    return SliverMainAxisGroup(
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Upcoming bills',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                TextButton(
+                    onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SubscriptionListScreen())),
+                    child: const Text('See all')),
+              ],
+            ),
+          ),
+        ),
+        SliverList.builder(
+          itemCount: bills.length,
+          itemBuilder: (context, index) {
+            return _AnimatedSubscriptionTile(
+              key: ValueKey(bills[index].id),
+              subscription: bills[index],
+              index: index,
+            );
+          },
+        ),
+      ],
     );
   }
 
@@ -544,6 +561,80 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  // Lazy-loaded animated tile for upcoming bills
+  Widget _subscriptionTile(BuildContext context, Subscription s) {
+    final daysLeft = s.nextBillingDate.difference(DateTime.now()).inDays;
+    final isUrgent = daysLeft <= 3;
+    final themeColor = s.themeColor ??
+        SubscriptionTheme.categoryColors[s.category] ??
+        PingTheme.primary;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          borderRadius: BorderRadius.circular(14)),
+      child: InkWell(
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (_) => SubscriptionDetailScreen(id: s.id)));
+        },
+        borderRadius: BorderRadius.circular(14),
+        child: Row(children: [
+          _buildServiceIcon(s.name, themeColor),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                Row(children: [
+                  Text(s.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600, fontSize: 15)),
+                  if (s.source == 'manual') ...[
+                    const SizedBox(width: 6),
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                            color: PingTheme.primary.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(4)),
+                        child: const Text('manual',
+                            style: TextStyle(
+                                fontSize: 9,
+                                color: PingTheme.primary,
+                                fontWeight: FontWeight.w600)))
+                  ],
+                ]),
+                const SizedBox(height: 2),
+                Text(
+                    '\${s.currencySymbol}\${s.amount.toStringAsFixed(2)} / \${s.billingCycle}  \u00b7  \${s.paymentMethod}',
+                    style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+              ])),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+                color: isUrgent
+                    ? PingTheme.danger.withValues(alpha: 0.12)
+                    : Colors.grey.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10)),
+            child: Text(isUrgent ? '\${daysLeft}d!' : '$daysLeft',
+                style: TextStyle(
+                    color: isUrgent ? PingTheme.danger : Colors.grey[600],
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12)),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+        ]),
+      ),
+    );
+  }
+
   Widget _buildServiceIcon(String name, Color color) {
     // Map known service names to Material Icons
     final icon =
@@ -587,4 +678,174 @@ class _DashboardScreenState extends State<DashboardScreen> {
     'github': Icons.code,
     'gitlab': Icons.code,
   };
+}
+
+/// Animated subscription tile with staggered fade-in for lazy loading.
+class _AnimatedSubscriptionTile extends StatefulWidget {
+  final Subscription subscription;
+  final int index;
+
+  const _AnimatedSubscriptionTile({
+    super.key,
+    required this.subscription,
+    required this.index,
+  });
+
+  @override
+  State<_AnimatedSubscriptionTile> createState() => _AnimatedSubscriptionTileState();
+}
+
+class _AnimatedSubscriptionTileState extends State<_AnimatedSubscriptionTile>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.15),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    // Stagger by index, capped
+    Future.delayed(Duration(milliseconds: (widget.index * 60).clamp(0, 300)), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.subscription;
+    final daysLeft = s.nextBillingDate.difference(DateTime.now()).inDays;
+    final isUrgent = daysLeft <= 3;
+    final themeColor = s.themeColor ??
+        SubscriptionTheme.categoryColors[s.category] ??
+        PingTheme.primary;
+    final serviceIcon = _DashboardScreenIcons.get(s.name) ?? Icons.subscriptions_rounded;
+
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Container(
+          margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(14)),
+          child: InkWell(
+            onTap: () {
+              HapticFeedback.selectionClick();
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => SubscriptionDetailScreen(id: s.id)));
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Row(children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: themeColor.withValues(alpha: 0.15)),
+                child: Icon(serviceIcon, size: 22, color: themeColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    Row(children: [
+                      Text(s.name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 15)),
+                      if (s.source == 'manual') ...[
+                        const SizedBox(width: 6),
+                        Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                                color: PingTheme.primary.withValues(alpha: 0.08),
+                                borderRadius: BorderRadius.circular(4)),
+                            child: const Text('manual',
+                                style: TextStyle(
+                                    fontSize: 9,
+                                    color: PingTheme.primary,
+                                    fontWeight: FontWeight.w600)))
+                      ],
+                    ]),
+                    const SizedBox(height: 2),
+                    Text(
+                        '\${s.currencySymbol}\${s.amount.toStringAsFixed(2)} / \${s.billingCycle}  \u00b7  \${s.paymentMethod}',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                  ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                    color: isUrgent
+                        ? PingTheme.danger.withValues(alpha: 0.12)
+                        : Colors.grey.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10)),
+                child: Text(isUrgent ? '\${daysLeft}d!' : '$daysLeft',
+                    style: TextStyle(
+                        color: isUrgent ? PingTheme.danger : Colors.grey[600],
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12)),
+              ),
+              const SizedBox(width: 4),
+              const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Icon lookup helper for animated tiles.
+class _DashboardScreenIcons {
+  static const Map<String, IconData> _icons = {
+    'netflix': Icons.movie,
+    'spotify': Icons.music_note,
+    'disney+': Icons.movie_creation,
+    'icloud+': Icons.cloud,
+    'apple': Icons.apple,
+    'youtube': Icons.play_circle,
+    'youtube premium': Icons.play_circle,
+    'amazon prime': Icons.shopping_cart,
+    'adobe cc': Icons.brush,
+    'google one': Icons.cloud_queue,
+    'microsoft 365': Icons.computer,
+    'dropbox': Icons.inventory_2,
+    'hbo max': Icons.live_tv,
+    'gym': Icons.fitness_center,
+    'dazn': Icons.sports_soccer,
+    'sky': Icons.tv,
+    'deezer': Icons.headphones,
+    'strava': Icons.directions_run,
+    'deliveroo': Icons.delivery_dining,
+    'canal+': Icons.movie_filter,
+    'rtl+': Icons.live_tv,
+    'zalando': Icons.checkroom,
+    'bolt': Icons.electric_bolt,
+    'notion': Icons.article,
+    'figma': Icons.design_services,
+    'github': Icons.code,
+    'gitlab': Icons.code,
+  };
+
+  static IconData? get(String name) => _icons[name.toLowerCase()];
 }

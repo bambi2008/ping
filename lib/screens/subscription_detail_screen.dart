@@ -49,7 +49,13 @@ class SubscriptionDetailScreen extends StatelessWidget {
           body: ListView(padding: const EdgeInsets.all(20), children: [
             Center(
                 child: Column(children: [
-              Container(
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: 0.7 + scale * 0.3, child: child),
+                child: Container(
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
