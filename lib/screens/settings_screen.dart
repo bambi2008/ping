@@ -76,6 +76,26 @@ class SettingsScreen extends StatelessWidget {
               },
             ),
           ),
+          if (provider.notificationsEnabled)
+            _tile(
+              context,
+              Icons.notifications_active_outlined,
+              'Test notification',
+              'Send a test reminder now',
+              onTap: () async {
+                await NotificationService.showNow(
+                  'Ping reminder',
+                  'Your bill is due soon! This is a test notification.',
+                );
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Test notification sent'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+            ),
           const SizedBox(height: 8),
           _section('Data'),
           _tile(
@@ -84,6 +104,13 @@ class SettingsScreen extends StatelessWidget {
             'Export as CSV',
             'Share a copy of your subscription list',
             onTap: () => _exportCsv(provider),
+          ),
+          _tile(
+            context,
+            Icons.upload_outlined,
+            'Import from CSV',
+            'Paste a CSV to bulk-add subscriptions',
+            onTap: () => _showImportDialog(context, provider),
           ),
           _tile(
             context,
@@ -236,6 +263,117 @@ class SettingsScreen extends StatelessWidget {
   }
 
   String _csvCell(String value) => '"${value.replaceAll('"', '""')}"';
+
+  void _showImportDialog(BuildContext context, SubscriptionProvider provider) {
+    final ctrl = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Import from CSV'),
+        content: SizedBox(
+          width: 320,
+          child: TextField(
+            controller: ctrl,
+            maxLines: 10,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Name,Amount,Currency,Billing Cycle,Category,Payment Method,Next Billing',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final text = ctrl.text.trim();
+              if (text.isEmpty) return;
+              final lines = text.split('\n');
+              int imported = 0;
+              for (int i = 0; i < lines.length; i++) {
+                final line = lines[i].trim();
+                if (line.isEmpty) continue;
+                // Skip header row
+                if (i == 0 && line.toLowerCase().contains('name')) continue;
+                final cells = _parseCsvLine(line);
+                if (cells.length < 3) continue;
+                try {
+                  final name = cells[0];
+                  final amount = double.parse(cells[1]);
+                  final currency = cells.length > 2 ? cells[2] : 'EUR';
+                  final billingCycle = cells.length > 3 ? cells[3].toLowerCase() : 'monthly';
+                  final category = cells.length > 4 ? cells[4] : 'Other';
+                  final paymentMethod = cells.length > 5 ? cells[5] : 'Unknown';
+                  DateTime nextBilling;
+                  try {
+                    nextBilling = cells.length > 6
+                        ? DateTime.parse(cells[6])
+                        : DateTime.now().add(const Duration(days: 30));
+                  } catch (_) {
+                    nextBilling = DateTime.now().add(const Duration(days: 30));
+                  }
+                  final theme = SubscriptionTheme.match(name);
+                  await provider.addManual(Subscription(
+                    id: 'import_${DateTime.now().millisecondsSinceEpoch}_$i',
+                    name: name,
+                    logoUrl: name.toLowerCase(),
+                    amount: amount,
+                    currency: currency,
+                    billingCycle: billingCycle,
+                    nextBillingDate: nextBilling,
+                    category: category,
+                    paymentMethod: paymentMethod,
+                    source: 'import',
+                    themeColor: theme?.color,
+                  ));
+                  imported++;
+                } catch (_) {
+                  // Skip invalid rows
+                }
+              }
+              if (!dialogContext.mounted) return;
+              Navigator.pop(dialogContext);
+              if (!context.mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Imported $imported subscription${imported == 1 ? "" : "s"}'),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              );
+            },
+            child: const Text('Import'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<String> _parseCsvLine(String line) {
+    final result = <String>[];
+    var current = StringBuffer();
+    var inQuotes = false;
+    for (int i = 0; i < line.length; i++) {
+      final char = line[i];
+      if (char == '"') {
+        if (inQuotes && i + 1 < line.length && line[i + 1] == '"') {
+          current.write('"');
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char == ',' && !inQuotes) {
+        result.add(current.toString().trim());
+        current = StringBuffer();
+      } else {
+        current.write(char);
+      }
+    }
+    result.add(current.toString().trim());
+    return result;
+  }
 
   void _confirmClear(
     BuildContext context,

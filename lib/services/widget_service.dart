@@ -1,8 +1,12 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert';
 
+/// WidgetService writes data to SharedPreferences AND syncs to
+/// iOS App Group UserDefaults via platform channel so WidgetKit can read it.
 class WidgetService {
   static const _key = 'widget_data';
+  static const _channel = MethodChannel('ping/widget');
 
   static Future<void> updateWidgetData({
     required String totalMonthly,
@@ -10,16 +14,24 @@ class WidgetService {
     required int activeCount,
     required List<Map<String, String>> upcoming,
   }) async {
+    final data = jsonEncode({
+      'total': totalMonthly,
+      'currency': currency,
+      'active': activeCount,
+      'upcoming': upcoming.take(4).toList(),
+      'updated': DateTime.now().toIso8601String(),
+    });
+
+    // Save locally for Flutter-side reads
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-        _key,
-        jsonEncode({
-          'total': totalMonthly,
-          'currency': currency,
-          'active': activeCount,
-          'upcoming': upcoming.take(4).toList(),
-          'updated': DateTime.now().toIso8601String(),
-        }));
+    await prefs.setString(_key, data);
+
+    // Sync to native App Group for iOS WidgetKit
+    try {
+      await _channel.invokeMethod('syncWidgetData', {'data': data});
+    } catch (_) {
+      // Non-fatal — widget just won't update on platforms without native support
+    }
   }
 
   static Future<Map<String, dynamic>?> readWidgetData() async {

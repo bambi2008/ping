@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import UserNotifications
+import WidgetKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -26,6 +27,29 @@ import UserNotifications
     )
     shareChannel.setMethodCallHandler { [weak self] call, result in
       self?.handleShareCall(call, result: result)
+    }
+
+    // Widget data sync — writes to App Group UserDefaults
+    let widgetChannel = FlutterMethodChannel(
+      name: "ping/widget",
+      binaryMessenger: engineBridge.applicationRegistrar.messenger()
+    )
+    widgetChannel.setMethodCallHandler { call, result in
+      if call.method == "syncWidgetData",
+         let args = call.arguments as? [String: Any],
+         let jsonData = args["data"] as? String {
+        if let defaults = UserDefaults(suiteName: "group.com.bambi2008.ping") {
+          defaults.set(jsonData, forKey: "widget_data")
+          #if canImport(WidgetKit)
+          WidgetCenter.shared.reloadAllTimelines()
+          #endif
+          result(true)
+        } else {
+          result(false)
+        }
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
     }
   }
 
