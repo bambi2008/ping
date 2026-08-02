@@ -12,8 +12,13 @@ import 'subscription_list_screen.dart';
 import 'add_subscription_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_detail_screen.dart';
+import 'quick_add_screen.dart';
+import 'email_scan_screen.dart';
 import 'calendar_screen.dart';
 import '../services/subscription_templates.dart';
+import '../widgets/burn_rate_hero.dart';
+import '../widgets/shareable_summary.dart';
+import '../widgets/cancel_celebration.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -173,29 +178,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Empty State ──
   Widget _buildEmptyState(BuildContext context, SubscriptionProvider p) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(child: Padding(
       padding: const EdgeInsets.all(PingTheme.space4Xl),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Container(
-          width: 100, height: 100,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: PingTheme.primary.withValues(alpha: 0.08)),
-          child: const Icon(Icons.subscriptions_rounded, size: 48, color: PingTheme.primary),
+        // Animated logo
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.8, end: 1.0),
+          duration: const Duration(milliseconds: 1500),
+          curve: Curves.elasticOut,
+          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Glow
+              Container(
+                width: 140, height: 140,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [PingTheme.primary.withValues(alpha: 0.15), Colors.transparent],
+                  ),
+                ),
+              ),
+              // Logo
+              Container(
+                width: 90, height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [PingTheme.primary, PingTheme.primaryLight],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: PingTheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text('P', style: TextStyle(fontSize: 44, fontWeight: FontWeight.w900, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 28),
-        Text('No subscriptions yet', style: Theme.of(context).textTheme.headlineMedium),
+        const SizedBox(height: PingTheme.space3Xl),
+        Text('Let\'s find your money leaks',
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            )),
         const SizedBox(height: PingTheme.spaceSm),
-        Text('Add your first subscription to see upcoming renewals and monthly spending.',
+        Text('Add subscriptions you pay for and Ping will track renewals, alert you before charges, and help you cancel.',
             style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textBody, height: 1.5),
             textAlign: TextAlign.center),
-        const SizedBox(height: 36),
-        FilledButton.icon(
-          onPressed: () async {
-            HapticFeedback.lightImpact();
-            await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddSubscriptionScreen()));
-          },
-          icon: const Icon(Icons.add),
-          label: const Text('Add Manually'),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14)),
+        const SizedBox(height: PingTheme.space3Xl),
+        // Two buttons
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FilledButton.icon(
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickAddScreen()));
+              },
+              icon: const Icon(Icons.bolt),
+              label: const Text('Quick Add'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
+              ),
+            ),
+            const SizedBox(width: PingTheme.spaceMd),
+            OutlinedButton.icon(
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const EmailScanScreen()));
+              },
+              icon: const Icon(Icons.mail_outline, size: 18),
+              label: const Text('Scan Email'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
+              ),
+            ),
+          ],
         ),
       ]),
     ));
@@ -383,68 +455,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ── Total Card ──
+  // ── Burn Rate Hero ──
   Widget _buildTotalCard(BuildContext context, SubscriptionProvider p) {
     final sym = CurrencyProvider.getSymbol(p.displayCurrency);
     return SliverToBoxAdapter(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0, end: p.totalMonthly),
-        duration: const Duration(milliseconds: 800),
-        curve: Curves.easeOutCubic,
-        builder: (context, value, _) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: PingTheme.spaceLg, vertical: PingTheme.spaceSm),
-          padding: const EdgeInsets.all(PingTheme.space2Xl),
-          decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                  colors: [PingTheme.primary, PingTheme.primaryLight],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight),
-              borderRadius: BorderRadius.circular(PingTheme.radiusLg),
-              boxShadow: [
-                BoxShadow(color: PingTheme.primary.withValues(alpha: 0.25), blurRadius: 20, offset: const Offset(0, 8)),
-              ]),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Monthly spend', style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7), fontSize: PingTheme.textSmall, fontWeight: FontWeight.w500)),
-              if (p.momAvailable)
-                _MoMBadge(change: p.momChange, currencySymbol: sym)
-              else
-                Icon(Icons.lock_outline, size: 16, color: Colors.white.withValues(alpha: 0.5)),
-            ]),
-            const SizedBox(height: PingTheme.spaceSm),
-            Text('$sym${value.toStringAsFixed(2)}', style: const TextStyle(
-                color: Colors.white, fontSize: PingTheme.textHero, fontWeight: FontWeight.w800, letterSpacing: -1, height: 1.1)),
-            const SizedBox(height: PingTheme.spaceXs),
-            Text('$sym${p.totalYearly.toStringAsFixed(0)} / year  ·  ${p.activeCount} active subs',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: PingTheme.textSmall)),
-            const SizedBox(height: PingTheme.spaceLg),
-            Row(children: [
-              _pillBtn('View All', Icons.list_alt, () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen()))),
-              const SizedBox(width: PingTheme.spaceSm),
-              _pillBtn('Calendar', Icons.calendar_today, () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const CalendarScreen()))),
-            ]),
-          ]),
-        ),
+      child: Column(
+        children: [
+          BurnRateHero(
+            monthlyTotal: p.totalMonthly,
+            yearlyTotal: p.totalYearly,
+            activeCount: p.activeCount,
+            currencySymbol: sym,
+            momChange: p.momAvailable ? p.momChange : null,
+            onViewAll: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const SubscriptionListScreen())),
+            onCalendar: () => Navigator.push(
+                context, MaterialPageRoute(builder: (_) => const CalendarScreen())),
+          ),
+          const SizedBox(height: PingTheme.spaceSm),
+          // Shareable summary card
+          ShareableSummary(
+            monthlyTotal: p.totalMonthly,
+            yearlyTotal: p.totalYearly,
+            activeCount: p.activeCount,
+            currencySymbol: sym,
+            categoryBreakdown: p.categoryBreakdown,
+          ),
+        ],
       ),
     );
-  }
-
-  Widget _pillBtn(String label, IconData icon, VoidCallback onTap) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.15),
-      borderRadius: BorderRadius.circular(20),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 16, color: Colors.white),
-            const SizedBox(width: 6),
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: PingTheme.textSmall))
-          ]))));
   }
 
   // ── Quick Stats ──
@@ -599,32 +638,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-// ── MoM Badge ──
-class _MoMBadge extends StatelessWidget {
-  final double change;
-  final String currencySymbol;
-  const _MoMBadge({required this.change, required this.currencySymbol});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDecrease = change < 0;
-    final absStr = change.abs().toStringAsFixed(2);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: isDecrease ? Colors.green.withValues(alpha: 0.25) : Colors.red.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(PingTheme.radiusSm),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(isDecrease ? Icons.arrow_downward : Icons.arrow_upward, size: 12,
-            color: isDecrease ? PingTheme.success : Colors.redAccent),
-        const SizedBox(width: 2),
-        Text('${isDecrease ? '-' : '+'}$currencySymbol$absStr',
-          style: TextStyle(color: isDecrease ? PingTheme.success : Colors.redAccent, fontWeight: FontWeight.w700, fontSize: 12)),
-      ]),
-    );
-  }
-}
+// MoM badge now lives in BurnRateHero
 
 // ── Animated Subscription Tile ──
 class _AnimatedSubscriptionTile extends StatefulWidget {

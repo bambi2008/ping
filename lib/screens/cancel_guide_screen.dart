@@ -3,6 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../app/theme.dart';
 import '../models/subscription.dart';
+import '../widgets/cancel_celebration.dart';
+import '../models/subscription_provider.dart';
+import 'package:provider/provider.dart';
 
 class CancelGuideScreen extends StatelessWidget {
   final String serviceName;
@@ -144,8 +147,21 @@ class CancelGuideScreen extends StatelessWidget {
         // Alternative: mark as cancelled
         OutlinedButton.icon(
           onPressed: () {
-            HapticFeedback.mediumImpact();
-            Navigator.pop(context, true); // true = cancelled
+            HapticFeedback.heavyImpact();
+            // Show celebration overlay
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (ctx) => CancelCelebration(
+                subscriptionName: guide.name,
+                monthlyAmount: 9.99, // Would be passed from detail screen in real app
+                currencySymbol: '€',
+                onDismiss: () {
+                  Navigator.of(ctx).pop();
+                  Navigator.pop(context, true); // true = cancelled
+                },
+              ),
+            );
           },
           icon: const Icon(Icons.check),
           label: const Text('I\'ve Cancelled — Mark as Cancelled'),
