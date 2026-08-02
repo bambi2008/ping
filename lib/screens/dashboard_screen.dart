@@ -735,7 +735,10 @@ class _AnimatedSubscriptionTileState extends State<_AnimatedSubscriptionTile>
               Navigator.push(context, SlideFadeRoute(page: SubscriptionDetailScreen(id: s.id)));
             },
             child: Row(children: [
-              BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
+              Hero(
+                tag: 'brand_${s.id}',
+                child: BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
+              ),
               const SizedBox(width: PingTheme.spaceMd),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Row(children: [

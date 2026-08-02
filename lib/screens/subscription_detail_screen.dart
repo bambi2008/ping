@@ -45,12 +45,15 @@ class SubscriptionDetailScreen extends StatelessWidget {
             children: [
               // ── Hero ──
               Center(child: Column(children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: 1.0),
-                  duration: const Duration(milliseconds: 500),
-                  curve: Curves.elasticOut,
-                  builder: (context, scale, child) => Transform.scale(scale: 0.7 + scale * 0.3, child: child),
-                  child: BrandIcon(name: s.name, fallbackColor: themeColor, size: 80, borderRadius: PingTheme.radiusLg),
+                Hero(
+                  tag: 'brand_${s.id}',
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.elasticOut,
+                    builder: (context, scale, child) => Transform.scale(scale: 0.7 + scale * 0.3, child: child),
+                    child: BrandIcon(name: s.name, fallbackColor: themeColor, size: 80, borderRadius: PingTheme.radiusLg),
+                  ),
                 ),
                 const SizedBox(height: PingTheme.spaceLg),
                 Text(s.name, style: Theme.of(context).textTheme.headlineMedium),

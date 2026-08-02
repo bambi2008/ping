@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../widgets/press_scale.dart';
 
 /// Welcome screen — first thing user sees. Clean, brand-focused.
 /// Animates from logo → tagline → CTA.

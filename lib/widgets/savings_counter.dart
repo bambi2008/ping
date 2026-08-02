@@ -27,7 +27,7 @@ class _SavingsCounterState extends State<SavingsCounter>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
     _count = Tween<double>(begin: 0, end: widget.totalSaved).animate(
       CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
     );

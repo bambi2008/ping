@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../app/theme.dart';
+import '../../widgets/press_scale.dart';
 import '../../providers/iap_provider.dart';
 
 /// Hard paywall — user must start trial or purchase to proceed.
@@ -180,27 +181,31 @@ class _PaywallScreenState extends State<PaywallScreen> {
                   SizedBox(
                     width: double.infinity,
                     height: 58,
-                    child: FilledButton(
-                      onPressed: iap.isLoading ? null : () async {
+                    child: PressScale(
+                      scaleDown: 0.97,
+                      onTap: iap.isLoading ? null : () async {
                         HapticFeedback.mediumImpact();
-                        // Start trial first, then purchase (or just trial)
                         await iap.startTrial();
                         widget.onComplete();
                       },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: PingTheme.primary,
-                        shape: RoundedRectangleBorder(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
                           borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                          boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
+                        ),
+                        child: Center(
+                          child: iap.isLoading
+                              ? const SizedBox(width: 20, height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                              : Text('Start 3-Day Free Trial',
+                                  style: TextStyle(
+                                    fontSize: PingTheme.textBody,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  )),
                         ),
                       ),
-                      child: iap.isLoading
-                          ? const SizedBox(width: 20, height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Text('Start 3-Day Free Trial',
-                              style: TextStyle(
-                                fontSize: PingTheme.textBody,
-                                fontWeight: FontWeight.w800,
-                              )),
                     ),
                   ),
                   const SizedBox(height: PingTheme.spaceMd),

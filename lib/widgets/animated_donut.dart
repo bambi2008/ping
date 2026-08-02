@@ -33,7 +33,7 @@ class _AnimatedDonutState extends State<AnimatedDonut>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
     Future.microtask(() => _ctrl.forward());
   }
 
