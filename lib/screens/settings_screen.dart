@@ -17,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(PingTheme.spaceLg),
         children: [
           _section('Display'),
           _tile(
@@ -47,12 +47,12 @@ class SettingsScreen extends StatelessWidget {
               }
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PingTheme.spaceSm),
           _section('Notifications'),
           Container(
             decoration: BoxDecoration(
               color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
             ),
             child: SwitchListTile(
               secondary: const Icon(
@@ -96,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
                 );
               },
             ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PingTheme.spaceSm),
           _section('Data'),
           _tile(
             context,
@@ -120,7 +120,7 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _confirmClear(context, provider),
             isDestructive: true,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: PingTheme.spaceSm),
           _section('About'),
           _tile(
             context,
@@ -136,7 +136,7 @@ class SettingsScreen extends StatelessWidget {
             'Version 1.0.0 · Open source',
             onTap: () => _showAbout(context),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: PingTheme.space3Xl),
         ],
       ),
     );
@@ -149,7 +149,7 @@ class SettingsScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: Colors.grey[500],
+            color: PingTheme.subtleText(context),
             letterSpacing: 1.2,
           ),
         ),
@@ -168,7 +168,7 @@ class SettingsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 2),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
       ),
       child: ListTile(
         leading: Icon(
@@ -184,19 +184,19 @@ class SettingsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(subtitle,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      style: TextStyle(fontSize: 12, color: PingTheme.subtleText(context))),
                   Text(subtitle2,
-                      style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                      style: TextStyle(fontSize: 10, color: PingTheme.subtleText(context))),
                 ],
               )
             : Text(
                 subtitle,
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                style: TextStyle(fontSize: 12, color: PingTheme.subtleText(context)),
               ),
         trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
         onTap: onTap,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
         ),
       ),
     );

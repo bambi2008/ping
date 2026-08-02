@@ -104,7 +104,7 @@ class CancelGuideScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
               color: PingTheme.warning.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(14)),
+              borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
           child: Row(children: [
             const Icon(Icons.info_outline, color: PingTheme.warning),
             const SizedBox(width: 12),
@@ -135,7 +135,7 @@ class CancelGuideScreen extends StatelessWidget {
               label: const Text('Open Cancellation Page'),
               style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14))),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
             ),
           ),
           const SizedBox(height: 12),
@@ -152,7 +152,7 @@ class CancelGuideScreen extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
           ),
         ),
       ]),

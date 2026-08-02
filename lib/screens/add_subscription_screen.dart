@@ -54,7 +54,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(padding: const EdgeInsets.all(20), children: [
+        child: ListView(padding: const EdgeInsets.all(PingTheme.spaceXl), children: [
           // Service name with autocomplete
           TextFormField(
             controller: _nameCtrl,
@@ -62,7 +62,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                 labelText: 'Service name',
                 hintText: 'e.g. Netflix, Spotify, Gym...',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12))),
+                    borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd))),
                 prefixIcon: Icon(Icons.loyalty)),
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Required' : null,
@@ -81,7 +81,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                     width: 32,
                     height: 32,
                     decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(PingTheme.radiusSm),
                         color: SubscriptionTheme.match(_nameCtrl.text)!
                             .color
                             .withValues(alpha: 0.2)),
@@ -92,12 +92,12 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                                 color: SubscriptionTheme.match(_nameCtrl.text)!
                                     .color,
                                 fontWeight: FontWeight.w700)))),
-                const SizedBox(width: 8),
+                const SizedBox(width: PingTheme.spaceSm),
                 Text('Matched theme',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textSmall)),
               ]),
             ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
 
           // Amount + Currency row
           Row(children: [
@@ -109,7 +109,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                       labelText: 'Amount',
                       hintText: '13.99',
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12))),
+                          borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd))),
                       prefixIcon: Icon(Icons.euro)),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
@@ -118,7 +118,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                           ? 'Invalid'
                           : null,
                 )),
-            const SizedBox(width: 10),
+            const SizedBox(width: PingTheme.spaceMd),
             Expanded(
                 flex: 2,
                 child: DropdownButtonFormField<String>(
@@ -126,17 +126,17 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                   decoration: const InputDecoration(
                       labelText: 'Currency',
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(12)))),
+                          borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd)))),
                   items: CurrencyProvider.popular
                       .map((c) => DropdownMenuItem(
                           value: c,
                           child: Text('${CurrencyProvider.getSymbol(c)} $c',
-                              style: const TextStyle(fontSize: 13))))
+                              style: const TextStyle(fontSize: PingTheme.textSmall))))
                       .toList(),
                   onChanged: (v) => setState(() => _currency = v!),
                 )),
           ]),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
 
           // Billing cycle
           DropdownButtonFormField<String>(
@@ -144,7 +144,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             decoration: const InputDecoration(
                 labelText: 'Billing cycle',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12))),
+                    borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd))),
                 prefixIcon: Icon(Icons.repeat)),
             items: SubscriptionProvider.cycles
                 .map((c) => DropdownMenuItem(
@@ -152,7 +152,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                 .toList(),
             onChanged: (v) => setState(() => _billingCycle = v!),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
 
           // Category
           DropdownButtonFormField<String>(
@@ -160,7 +160,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             decoration: const InputDecoration(
                 labelText: 'Category',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12))),
+                    borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd))),
                 prefixIcon: Icon(Icons.category)),
             items: [
               ...SubscriptionProvider.categories.map((c) =>
@@ -187,7 +187,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               }
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
 
           // Payment method
           DropdownButtonFormField<String>(
@@ -195,14 +195,14 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             decoration: const InputDecoration(
                 labelText: 'Payment method',
                 border: OutlineInputBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(12))),
+                    borderRadius: BorderRadius.all(Radius.circular(PingTheme.radiusMd))),
                 prefixIcon: Icon(Icons.credit_card)),
             items: SubscriptionProvider.paymentMethods
                 .map((m) => DropdownMenuItem(value: m, child: Text(m)))
                 .toList(),
             onChanged: (v) => setState(() => _paymentMethod = v!),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
 
           // Date
           ListTile(
@@ -212,7 +212,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
             subtitle: Text(
                 '${_nextBilling.day}/${_nextBilling.month}/${_nextBilling.year}'),
             shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
             tileColor: Theme.of(context).cardColor,
             onTap: () async {
               final picked = await showDatePicker(
@@ -223,7 +223,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               if (picked != null) setState(() => _nextBilling = picked);
             },
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: PingTheme.space3Xl),
 
           FilledButton.icon(
               onPressed: _submit,
@@ -232,7 +232,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
               style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)))),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd)))),
         ]),
       ),
     );
@@ -311,7 +311,7 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Row(children: [
           const Icon(Icons.check_circle, color: PingTheme.success, size: 20),
-          const SizedBox(width: 8),
+          const SizedBox(width: PingTheme.spaceSm),
           Text('${sub.name} added'),
         ]),
         behavior: SnackBarBehavior.floating,

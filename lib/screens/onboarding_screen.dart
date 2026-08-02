@@ -129,8 +129,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   child: Text(
                     'Skip',
                     style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 14,
+                      color: PingTheme.subtleText(context),
+                      fontSize: PingTheme.textSmall,
                     ),
                   ),
                 ),
@@ -168,10 +168,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     width: active ? 24 : 8,
                     height: 8,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusXs),
                       color: active
                           ? PingTheme.primary
-                          : Colors.grey.withValues(alpha: 0.25),
+                          : PingTheme.hairlineBorder(context),
                     ),
                   );
                 }),
@@ -201,7 +201,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                   ),
                   style: FilledButton.styleFrom(
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
                     ),
                   ),
                 ),
@@ -209,9 +209,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
             Text(
               'Your subscription data stays on this device.',
-              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+              style: TextStyle(color: PingTheme.subtleText(context), fontSize: 12),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: PingTheme.spaceLg),
           ],
         ),
       ),
@@ -224,7 +224,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     int index,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: PingTheme.space3Xl),
       child: Column(
         children: [
           const Spacer(flex: 2),
@@ -234,7 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             colors: page.iconColors,
             animController: _fadeCtrl,
           ),
-          const SizedBox(height: 40),
+          const SizedBox(height: PingTheme.space4Xl),
           // Headline
           Text(
             page.title,
@@ -245,17 +245,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               height: 1.2,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: PingTheme.spaceLg),
           Text(
             page.subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[600],
+              fontSize: PingTheme.textBody,
+              color: PingTheme.subtleText(context),
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: PingTheme.spaceXl),
           // Feature chips with staggered appearance
           Wrap(
             spacing: 8,
@@ -369,12 +369,12 @@ class _AnimatedChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(PingTheme.radiusLg),
         ),
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: PingTheme.textSmall,
             color: color,
             fontWeight: FontWeight.w600,
           ),

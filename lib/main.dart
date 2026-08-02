@@ -6,6 +6,10 @@ import 'app/theme.dart';
 import 'models/subscription_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/subscription_list_screen.dart';
+import 'screens/add_subscription_screen.dart';
+import 'screens/settings_screen.dart';
+import 'package:flutter/services.dart';
 import 'l10n/app_localizations.dart';
 
 void main() async {
@@ -44,17 +48,84 @@ class PingApp extends StatelessWidget {
         Locale('en'),
         Locale('zh'),
       ],
-      initialRoute: showOnboarding ? '/onboarding' : '/dashboard',
+      initialRoute: showOnboarding ? '/onboarding' : '/home',
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/onboarding':
             return MaterialPageRoute(builder: (_) => const OnboardingScreen());
-          case '/dashboard':
-            return MaterialPageRoute(builder: (_) => const DashboardScreen());
+          case '/home':
+            return MaterialPageRoute(builder: (_) => const _MainShell());
           default:
-            return MaterialPageRoute(builder: (_) => const DashboardScreen());
+            return MaterialPageRoute(builder: (_) => const _MainShell());
         }
       },
+    );
+  }
+}
+
+/// Bottom-nav shell hosting Dashboard, List, and Settings.
+class _MainShell extends StatefulWidget {
+  const _MainShell();
+
+  @override
+  State<_MainShell> createState() => _MainShellState();
+}
+
+class _MainShellState extends State<_MainShell> {
+  int _index = 0;
+
+  late final List<Widget> _screens = [
+    const DashboardScreen(),
+    const SubscriptionListScreen(),
+    const SettingsScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _index,
+        children: _screens,
+      ),
+      floatingActionButton: _index == 0 || _index == 1
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddSubscriptionScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
+            )
+          : null,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) {
+          HapticFeedback.selectionClick();
+          setState(() => _index = i);
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.list_alt_outlined),
+            selectedIcon: Icon(Icons.list_alt),
+            label: 'Subs',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+      ),
     );
   }
 }

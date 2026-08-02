@@ -19,16 +19,16 @@ class SubscriptionDetailScreen extends StatelessWidget {
           s.nextBillingDate.year,
           s.nextBillingDate.month,
           s.nextBillingDate.day,
-        )
-            .difference(DateTime(
-              DateTime.now().year,
-              DateTime.now().month,
-              DateTime.now().day,
-            ))
-            .inDays;
+        ).difference(DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        )).inDays;
         final themeColor = s.themeColor ??
             SubscriptionTheme.categoryColors[s.category] ??
             PingTheme.primary;
+        final serviceIcon = _getIcon(s.name);
+        final sym = CurrencyProvider.getSymbol(p.displayCurrency);
 
         return Scaffold(
           appBar: AppBar(
@@ -46,171 +46,361 @@ class SubscriptionDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          body: ListView(padding: const EdgeInsets.all(20), children: [
-            Center(
-                child: Column(children: [
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 500),
-                curve: Curves.elasticOut,
-                builder: (context, scale, child) =>
-                    Transform.scale(scale: 0.7 + scale * 0.3, child: child),
-                child: Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      color: themeColor.withValues(alpha: 0.15)),
-                  child: Center(
-                      child: Text(s.name[0],
-                          style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
-                              color: themeColor)))),
-              const SizedBox(height: 16),
-              Text(s.name,
-                  style: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text(s.category,
-                  style: TextStyle(fontSize: 14, color: Colors.grey[500])),
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _statusColor(s.status).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(8),
+          body: ListView(
+            padding: const EdgeInsets.all(PingTheme.spaceXl),
+            children: [
+              // ── Hero Card ──
+              Center(child: Column(children: [
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 500),
+                  curve: Curves.elasticOut,
+                  builder: (context, scale, child) =>
+                      Transform.scale(scale: 0.7 + scale * 0.3, child: child),
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(PingTheme.radiusLg),
+                        color: themeColor.withValues(alpha: 0.12)),
+                    child: Icon(serviceIcon, size: 40, color: themeColor)),
                 ),
-                child: Text(
-                  s.status.label,
-                  style: TextStyle(
-                    color: _statusColor(s.status),
-                    fontWeight: FontWeight.w600,
-                  ),
+                const SizedBox(height: PingTheme.spaceLg),
+                Text(s.name,
+                    style: Theme.of(context).textTheme.headlineMedium),
+                const SizedBox(height: PingTheme.spaceXs),
+                Text(s.category,
+                    style: TextStyle(
+                        fontSize: PingTheme.textSmall,
+                        color: PingTheme.subtleText(context))),
+                const SizedBox(height: PingTheme.spaceSm),
+                _StatusBadge(status: s.status),
+              ])),
+
+              const SizedBox(height: PingTheme.space2Xl),
+
+              // ── Cost Card ──
+              Container(
+                padding: const EdgeInsets.all(PingTheme.spaceXl),
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [themeColor.withValues(alpha: 0.08), themeColor.withValues(alpha: 0.03)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusLg),
+                    border: Border.all(color: themeColor.withValues(alpha: 0.15))),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('You pay',
+                          style: TextStyle(
+                              color: PingTheme.subtleText(context),
+                              fontSize: PingTheme.textSmall,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text('${s.currencySymbol}${s.amount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.w800,
+                              color: themeColor)),
+                      Text('per ${s.billingCycle}',
+                          style: TextStyle(
+                              color: PingTheme.subtleText(context),
+                              fontSize: PingTheme.textCaption)),
+                    ]),
+                    Container(
+                      height: 50,
+                      width: 1,
+                      color: PingTheme.hairlineBorder(context),
+                    ),
+                    Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                      Text('Monthly eq.',
+                          style: TextStyle(
+                              color: PingTheme.subtleText(context),
+                              fontSize: PingTheme.textSmall,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text('$sym${s.convertedMonthlyAmount(p.displayCurrency).toStringAsFixed(2)}',
+                          style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w700,
+                              color: PingTheme.primary)),
+                      Text('converted',
+                          style: TextStyle(
+                              color: PingTheme.subtleText(context),
+                              fontSize: PingTheme.textCaption)),
+                    ]),
+                  ],
                 ),
               ),
-            ])),
-            const SizedBox(height: 28),
-            Container(
-                padding: const EdgeInsets.all(20),
+
+              const SizedBox(height: PingTheme.spaceLg),
+
+              // ── Next Billing Countdown ──
+              Container(
+                padding: const EdgeInsets.all(PingTheme.spaceLg),
                 decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(16)),
-                child: Column(children: [
-                  _row('Amount',
-                      '${s.currencySymbol}${s.amount.toStringAsFixed(2)}'),
-                  const Divider(height: 24),
-                  _row('Monthly equivalent',
-                      '${CurrencyProvider.getSymbol(p.displayCurrency)}${s.convertedMonthlyAmount(p.displayCurrency).toStringAsFixed(2)}'),
-                  const Divider(height: 24),
-                  _row('Billing cycle', s.billingCycle),
-                  const Divider(height: 24),
-                  _row('Next billing',
-                      '$daysLeft days (${_fmt(s.nextBillingDate)})'),
-                  const Divider(height: 24),
-                  _row('Category', s.category),
-                  const Divider(height: 24),
-                  _row('Payment method', s.paymentMethod),
-                  const Divider(height: 24),
-                  _row('Currency', '${s.currency} (${s.currencySymbol})'),
-                  const Divider(height: 24),
-                  _row('Source', '✍️ Manual'),
-                ])),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AddSubscriptionScreen(subscription: s),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusLg),
+                    border: Border.all(color: PingTheme.hairlineBorder(context))),
+                child: Row(children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: (daysLeft <= 3 ? PingTheme.danger : PingTheme.warning).withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                    ),
+                    child: Icon(
+                      daysLeft <= 3 ? Icons.warning_amber_rounded : Icons.event_rounded,
+                      color: daysLeft <= 3 ? PingTheme.danger : PingTheme.warning,
+                      size: 24,
+                    ),
                   ),
+                  const SizedBox(width: PingTheme.spaceMd),
+                  Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Next billing',
+                          style: TextStyle(
+                              color: PingTheme.subtleText(context),
+                              fontSize: PingTheme.textCaption,
+                              fontWeight: FontWeight.w500)),
+                      const SizedBox(height: 2),
+                      Text(_fmt(s.nextBillingDate),
+                          style: const TextStyle(
+                              fontSize: PingTheme.textBody,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  )),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceMd, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: daysLeft <= 3
+                          ? PingTheme.danger.withValues(alpha: 0.12)
+                          : PingTheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+                    ),
+                    child: Text(
+                      daysLeft <= 0 ? 'Due today' : '$daysLeft days left',
+                      style: TextStyle(
+                        color: daysLeft <= 3 ? PingTheme.danger : PingTheme.primary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: PingTheme.textSmall,
+                      ),
+                    ),
+                  ),
+                ]),
+              ),
+
+              const SizedBox(height: PingTheme.spaceLg),
+
+              // ── Info Grid ──
+              Container(
+                decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(PingTheme.radiusLg),
+                    border: Border.all(color: PingTheme.hairlineBorder(context))),
+                child: Column(children: [
+                  _infoRow(context, Icons.repeat_rounded, 'Billing cycle', s.billingCycle),
+                  _divider(context),
+                  _infoRow(context, Icons.category_outlined, 'Category', s.category),
+                  _divider(context),
+                  _infoRow(context, Icons.credit_card_rounded, 'Payment', s.paymentMethod),
+                  _divider(context),
+                  _infoRow(context, Icons.language_rounded, 'Currency', '${s.currency} (${s.currencySymbol})'),
+                  _divider(context),
+                  _infoRow(context, Icons.source_outlined, 'Source', s.source == 'manual' ? 'Manual entry' : s.source.capitalize()),
+                ]),
+              ),
+
+              const SizedBox(height: PingTheme.space2Xl),
+
+              // ── Actions ──
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddSubscriptionScreen(subscription: s),
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Edit Subscription'),
                 ),
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Edit Subscription'),
               ),
-            ),
-            const SizedBox(height: 12),
-            // Cancel guide
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: () async {
-                  final cancelled = await Navigator.push<bool>(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              CancelGuideScreen(serviceName: s.name)));
-                  if (cancelled == true && context.mounted) {
-                    await p.setStatus(id, SubscriptionStatus.cancelled);
+              const SizedBox(height: PingTheme.spaceMd),
+
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final cancelled = await Navigator.push<bool>(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                CancelGuideScreen(serviceName: s.name)));
+                    if (cancelled == true && context.mounted) {
+                      await p.setStatus(id, SubscriptionStatus.cancelled);
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  },
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text('Cancel Guide'),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: PingTheme.subtleText(context),
+                      side: BorderSide(color: PingTheme.hairlineBorder(context))),
+                ),
+              ),
+              const SizedBox(height: PingTheme.spaceSm),
+
+              Row(children: [
+                Expanded(
+                    child: ElevatedButton.icon(
+                  onPressed: () async {
+                    await p.setStatus(
+                      id,
+                      s.isActive
+                          ? SubscriptionStatus.paused
+                          : SubscriptionStatus.active,
+                    );
                     if (context.mounted) Navigator.pop(context);
-                  }
-                },
-                icon: const Icon(Icons.cancel_outlined),
-                label: const Text('Cancel Guide'),
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.grey[700],
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    side: BorderSide(color: Colors.grey[300]!)),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(children: [
-              Expanded(
-                  child: ElevatedButton.icon(
-                onPressed: () async {
-                  await p.setStatus(
-                    id,
-                    s.isActive
-                        ? SubscriptionStatus.paused
-                        : SubscriptionStatus.active,
-                  );
-                  if (context.mounted) Navigator.pop(context);
-                },
-                icon: Icon(s.isActive ? Icons.pause : Icons.play_arrow),
-                label: Text(s.isActive ? 'Pause' : 'Resume'),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        s.isActive ? PingTheme.warning : PingTheme.success,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14))),
-              )),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: OutlinedButton.icon(
-                onPressed: () async {
-                  await p.removeSubscription(id);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                icon: const Icon(Icons.delete_outline),
-                label: const Text('Remove'),
-                style: OutlinedButton.styleFrom(
-                    foregroundColor: PingTheme.danger,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    side: const BorderSide(color: PingTheme.danger)),
-              )),
-            ]),
-          ]),
+                  },
+                  icon: Icon(s.isActive ? Icons.pause : Icons.play_arrow),
+                  label: Text(s.isActive ? 'Pause' : 'Resume'),
+                  style: ElevatedButton.styleFrom(
+                      backgroundColor:
+                          s.isActive ? PingTheme.warning : PingTheme.success,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
+                )),
+                const SizedBox(width: PingTheme.spaceMd),
+                Expanded(
+                    child: OutlinedButton.icon(
+                  onPressed: () async {
+                    await p.removeSubscription(id);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                  icon: const Icon(Icons.delete_outline),
+                  label: const Text('Remove'),
+                  style: OutlinedButton.styleFrom(
+                      foregroundColor: PingTheme.danger,
+                      side: const BorderSide(color: PingTheme.danger),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
+                )),
+              ]),
+              const SizedBox(height: PingTheme.space2Xl),
+            ],
+          ),
         );
       },
     );
   }
 
-  Widget _row(String label, String value) =>
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+  Widget _infoRow(BuildContext context, IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: PingTheme.spaceLg, vertical: PingTheme.spaceMd + 2),
+      child: Row(children: [
+        Icon(icon, size: 20, color: PingTheme.subtleText(context)),
+        const SizedBox(width: PingTheme.spaceMd),
+        Text(label,
+            style: TextStyle(
+                color: PingTheme.subtleText(context),
+                fontSize: PingTheme.textBody)),
+        const Spacer(),
         Text(value,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15))
-      ]);
+            style: const TextStyle(
+                fontWeight: FontWeight.w600, fontSize: PingTheme.textBody)),
+      ]),
+    );
+  }
+
+  Widget _divider(BuildContext context) =>
+      Divider(height: 1, color: PingTheme.hairlineBorder(context));
+
+  IconData _getIcon(String name) {
+    const icons = {
+      'netflix': Icons.movie,
+      'spotify': Icons.music_note,
+      'disney+': Icons.movie_creation,
+      'icloud+': Icons.cloud,
+      'apple': Icons.apple,
+      'youtube': Icons.play_circle,
+      'youtube premium': Icons.play_circle,
+      'amazon prime': Icons.shopping_cart,
+      'adobe cc': Icons.brush,
+      'google one': Icons.cloud_queue,
+      'microsoft 365': Icons.computer,
+      'dropbox': Icons.inventory_2,
+      'hbo max': Icons.live_tv,
+      'gym': Icons.fitness_center,
+      'dazn': Icons.sports_soccer,
+      'sky': Icons.tv,
+      'deezer': Icons.headphones,
+      'strava': Icons.directions_run,
+      'deliveroo': Icons.delivery_dining,
+      'canal+': Icons.movie_filter,
+      'rtl+': Icons.live_tv,
+      'zalando': Icons.checkroom,
+      'bolt': Icons.electric_bolt,
+      'notion': Icons.article,
+      'figma': Icons.design_services,
+      'github': Icons.code,
+      'gitlab': Icons.code,
+    };
+    return icons[name.toLowerCase()] ?? Icons.subscriptions_rounded;
+  }
+
+  String _fmt(DateTime d) {
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${d.day} ${m[d.month - 1]} ${d.year}';
+  }
+}
+
+// ── Status Badge ──
+class _StatusBadge extends StatelessWidget {
+  final SubscriptionStatus status;
+  const _StatusBadge({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _statusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: PingTheme.spaceMd, vertical: PingTheme.spaceXs + 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          status.label,
+          style: TextStyle(
+            color: color,
+            fontWeight: FontWeight.w600,
+            fontSize: PingTheme.textSmall,
+          ),
+        ),
+      ]),
+    );
+  }
 
   Color _statusColor(SubscriptionStatus status) => switch (status) {
         SubscriptionStatus.active => PingTheme.success,
@@ -219,22 +409,10 @@ class SubscriptionDetailScreen extends StatelessWidget {
         SubscriptionStatus.cancelled => PingTheme.danger,
         SubscriptionStatus.expired => Colors.grey,
       };
+}
 
-  String _fmt(DateTime d) {
-    const m = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${d.day} ${m[d.month - 1]} ${d.year}';
-  }
+// ── String Extension ──
+extension _CapExtension on String {
+  String capitalize() =>
+      isEmpty ? this : this[0].toUpperCase() + substring(1);
 }
