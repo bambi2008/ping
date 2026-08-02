@@ -6,6 +6,7 @@ import '../models/subscription.dart';
 import '../widgets/cancel_celebration.dart';
 import '../models/subscription_provider.dart';
 import 'package:provider/provider.dart';
+import '../widgets/press_scale.dart';
 
 class CancelGuideScreen extends StatelessWidget {
   final String serviceName;
@@ -129,16 +130,20 @@ class CancelGuideScreen extends StatelessWidget {
 
         // Open cancellation page
         if (guide.url != null) ...[
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton.icon(
-              onPressed: () => launchUrl(Uri.parse(guide.url!)),
-              icon: const Icon(Icons.open_in_browser),
-              label: const Text('Open Cancellation Page'),
-              style: FilledButton.styleFrom(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(PingTheme.radiusMd))),
+          PressScale(
+            onTap: () => launchUrl(Uri.parse(guide.url!)),
+            child: Container(
+              width: double.infinity, height: 52,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.danger, PingTheme.danger.withValues(alpha: 0.85)]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                boxShadow: [BoxShadow(color: PingTheme.danger.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(Icons.open_in_browser, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Open Cancellation Page', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+              ]),
             ),
           ),
           const SizedBox(height: 12),

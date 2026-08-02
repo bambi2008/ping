@@ -5,6 +5,9 @@ import '../app/theme.dart';
 import '../models/subscription.dart';
 import '../models/subscription_provider.dart';
 import '../services/subscription_templates.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/elastic_appear.dart';
+import '../widgets/page_transitions.dart';
 
 /// 邮件扫描界面 — 连接 Gmail，扫描订阅收据，自动发现订阅
 /// 流程: 授权 → 扫描动画 → 结果列表 → 一键添加
@@ -188,25 +191,22 @@ class _EmailScanScreenState extends State<EmailScanScreen>
           const SizedBox(height: PingTheme.space3Xl),
 
           // Gmail 按钮
-          SizedBox(
-            width: double.infinity,
-            height: 54,
-            child: FilledButton.icon(
-              onPressed: _startScan,
-              icon: Image.network(
-                'https://logo.clearbit.com/google.com',
-                width: 22, height: 22,
-                errorBuilder: (_, __, ___) => const Icon(Icons.mail, size: 22),
+          PressScale(
+            onTap: _startScan,
+            child: Container(
+              width: double.infinity, height: 54,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                border: Border.all(color: const Color(0xFFDADCE0)),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
               ),
-              label: const Text('Connect Gmail'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.white,
-                foregroundColor: const Color(0xFF3C4043),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                  side: const BorderSide(color: Color(0xFFDADCE0)),
-                ),
-              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Image.network('https://logo.clearbit.com/google.com', width: 22, height: 22,
+                  errorBuilder: (_, __, ___) => const Icon(Icons.mail, size: 22)),
+                const SizedBox(width: 8),
+                const Text('Connect Gmail', style: TextStyle(color: Color(0xFF3C4043), fontWeight: FontWeight.w600, fontSize: PingTheme.textBody)),
+              ]),
             ),
           ),
           const SizedBox(height: PingTheme.spaceMd),
@@ -250,7 +250,7 @@ class _EmailScanScreenState extends State<EmailScanScreen>
         const Spacer(flex: 2),
 
         // 扫描动画 — 雷达
-        AnimatedBuilder(
+        RepaintBoundary(child: AnimatedBuilder(
           animation: _scanCtrl,
           builder: (context, child) {
             return SizedBox(
@@ -289,6 +289,7 @@ class _EmailScanScreenState extends State<EmailScanScreen>
               ),
             );
           },
+        ),
         ),
         const SizedBox(height: PingTheme.space3Xl),
 
@@ -383,15 +384,19 @@ class _EmailScanScreenState extends State<EmailScanScreen>
                         style: const TextStyle(color: PingTheme.primary)),
                   ),
                 const Spacer(),
-                FilledButton(
-                  onPressed: _selected.isEmpty ? null : _addSelected,
-                  style: FilledButton.styleFrom(
+                PressScale(
+                  onTap: _selected.isEmpty ? null : _addSelected,
+                  child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
-                  ),
-                  child: Text(
-                    _selected.isEmpty ? 'Select above' : 'Add ${_selected.length} →',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                      borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                      boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                    ),
+                    child: Text(
+                      _selected.isEmpty ? 'Select above' : 'Add ${_selected.length} →',
+                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+                    ),
                   ),
                 ),
               ],
@@ -409,7 +414,9 @@ class _EmailScanScreenState extends State<EmailScanScreen>
     final color = template?.brandColor ?? PingTheme.primary;
     final logoText = template?.logoText ?? sub.name.substring(0, 2).toUpperCase();
 
-    return GestureDetector(
+    return ElasticAppear(
+      delay: Duration(milliseconds: index * 60),
+      child: GestureDetector(
       onTap: () {
         HapticFeedback.selectionClick();
         setState(() {
@@ -494,6 +501,7 @@ class _EmailScanScreenState extends State<EmailScanScreen>
           ],
         ),
       ),
+    ),
     );
   }
 
