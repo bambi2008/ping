@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../app/theme.dart';
 import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/page_transitions.dart';
 
 class AddSubscriptionScreen extends StatefulWidget {
   final Subscription? subscription;
@@ -225,14 +227,24 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
           ),
           const SizedBox(height: PingTheme.space3Xl),
 
-          FilledButton.icon(
-              onPressed: _submit,
-              icon: Icon(_isEditing ? Icons.save_outlined : Icons.add),
-              label: Text(_isEditing ? 'Save Changes' : 'Add Subscription'),
-              style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(PingTheme.radiusMd)))),
+          RepaintBoundary(child: PressScale(
+            onTap: _submit,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
+              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(_isEditing ? Icons.save_outlined : Icons.add, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(_isEditing ? 'Save Changes' : 'Add Subscription',
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+              ]),
+            ),
+          )),
         ]),
       ),
     );

@@ -7,6 +7,9 @@ import '../widgets/brand_icon.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/cancel_celebration.dart';
 import '../widgets/page_transitions.dart';
+import '../widgets/press_scale.dart';
+import '../widgets/glass_card.dart' as glass;
+import '../widgets/odometer_roll.dart';
 import 'add_subscription_screen.dart';
 import 'cancel_guide_screen.dart';
 
@@ -33,7 +36,7 @@ class SubscriptionDetailScreen extends StatelessWidget {
                 tooltip: 'Edit',
                 icon: const Icon(Icons.edit_outlined),
                 onPressed: () => Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => AddSubscriptionScreen(subscription: s))),
+                  SlideFadeRoute(page: AddSubscriptionScreen(subscription: s))),
               ),
             ],
           ),
@@ -60,7 +63,8 @@ class SubscriptionDetailScreen extends StatelessWidget {
               const SizedBox(height: PingTheme.space2Xl),
 
               // ── Cost Card ──
-              Container(
+              ElasticAppear(
+                child: Container(
                 padding: const EdgeInsets.all(PingTheme.spaceXl),
                 decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -72,8 +76,11 @@ class SubscriptionDetailScreen extends StatelessWidget {
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('You pay', style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textSmall, fontWeight: FontWeight.w500)),
                     const SizedBox(height: 2),
-                    Text('${s.currencySymbol}${s.amount.toStringAsFixed(2)}',
-                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: themeColor)),
+                    OdometerRoll(
+                      value: s.amount,
+                      prefix: s.currencySymbol,
+                      style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: themeColor),
+                    ),
                     Text('per ${s.billingCycle}', style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textCaption)),
                   ]),
                   Container(height: 50, width: 1, color: PingTheme.hairlineBorder(context)),
@@ -146,7 +153,9 @@ class SubscriptionDetailScreen extends StatelessWidget {
               const SizedBox(height: PingTheme.spaceLg),
 
               // ── Info Grid ──
-              Container(
+              ElasticAppear(
+                delay: const Duration(milliseconds: 200),
+                child: Container(
                 decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(PingTheme.radiusLg),
@@ -162,16 +171,28 @@ class SubscriptionDetailScreen extends StatelessWidget {
                   _divider(context),
                   _infoRow(context, Icons.source_outlined, 'Source', s.source == 'manual' ? 'Manual entry' : s.source.capitalize()),
                 ]),
+                ),
               ),
 
               const SizedBox(height: PingTheme.space2Xl),
 
               // ── Actions ──
-              SizedBox(width: double.infinity, height: 52, child: FilledButton.icon(
-                onPressed: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => AddSubscriptionScreen(subscription: s))),
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text('Edit Subscription'),
+              RepaintBoundary(child: PressScale(
+                onTap: () => Navigator.push(context,
+                    SlideFadeRoute(page: AddSubscriptionScreen(subscription: s))),
+                child: Container(
+                  width: double.infinity, height: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                    boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                  ),
+                  child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.edit_outlined, color: Colors.white, size: 20),
+                    SizedBox(width: 8),
+                    Text('Edit Subscription', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+                  ]),
+                ),
               )),
               const SizedBox(height: PingTheme.spaceMd),
               SizedBox(width: double.infinity, height: 52, child: OutlinedButton.icon(

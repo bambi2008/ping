@@ -182,12 +182,12 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
         Expanded(
           child: Stack(
             children: [
-              // 粒子层
+              // 粒子层 — RepaintBoundary 隔离
               if (_particleCtrl.isAnimating)
                 Positioned.fill(
-                  child: IgnorePointer(child: CustomPaint(
+                  child: RepaintBoundary(child: IgnorePointer(child: CustomPaint(
                     painter: _CoinParticlePainter(_particleCtrl),
-                  )),
+                  ))),
                 ),
 
               // 网格
@@ -427,7 +427,7 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
             children: [
               const Spacer(flex: 2),
 
-              // 🔥 火焰
+              // 🔥 火焰粒子效果
               if (progress > 0.1)
                 Opacity(
                   opacity: ((progress - 0.1) / 0.3).clamp(0.0, 1.0),
@@ -438,7 +438,10 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
                         curve: const Interval(0.1, 0.4, curve: Curves.elasticOut),
                       ),
                     ),
-                    child: const Text('🔥', style: TextStyle(fontSize: 72)),
+                    child: SizedBox(
+                      width: 120, height: 100,
+                      child: FireParticles(intensity: 0.8, baseColor: PingTheme.danger),
+                    ),
                   ),
                 ),
 
