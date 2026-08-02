@@ -1,4 +1,6 @@
 import 'dart:ui';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 enum SubscriptionStatus {
   active,
@@ -159,9 +161,11 @@ class CurrencyProvider {
     'JPY': '¥',
     'CAD': 'C\$',
     'AUD': 'A\$',
+    'CNY': '¥',
   };
 
-  static const Map<String, double> _rates = {
+  /// Fallback rates (used offline / before first fetch)
+  static const Map<String, double> _fallbackRates = {
     'EUR': 1.0,
     'USD': 1.08,
     'GBP': 0.85,
@@ -177,17 +181,15 @@ class CurrencyProvider {
     'JPY': 160.0,
     'CAD': 1.48,
     'AUD': 1.65,
+    'CNY': 7.85,
   };
 
+  /// Live rates (updated by fetchLiveRates)
+  static Map<String, double> _rates = Map.from(_fallbackRates);
+  static DateTime? _ratesUpdated;
+
   static final List<String> popular = [
-    'EUR',
-    'USD',
-    'GBP',
-    'CHF',
-    'SEK',
-    'NOK',
-    'DKK',
-    'PLN'
+    'EUR', 'USD', 'GBP', 'CHF', 'SEK', 'NOK', 'DKK', 'PLN'
   ];
   static final List<String> all = _rates.keys.toList()..sort();
 
@@ -198,6 +200,40 @@ class CurrencyProvider {
     final toRate = _rates[to] ?? 1.0;
     return toRate / fromRate;
   }
+
+  /// Fetch live exchange rates from free API (exchangerate.host)
+  /// Returns true if update succeeded
+  static Future<bool> fetchLiveRates() async {
+    try {
+      // Using exchangerate.host free API (no key required)
+      final response = await http.get(
+        Uri.parse('https://api.exchangerate.host/latest?base=EUR'),
+      ).timeout(const Duration(seconds: 5));
+      if (response.statusCode != 200) return false;
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final raw = data['rates'] as Map<String, dynamic>? ?? {};
+      final newRates = <String, double>{};
+      for (final entry in raw.entries) {
+        final code = entry.key;
+        if (_symbols.containsKey(code) || _fallbackRates.containsKey(code)) {
+          newRates[code] = (entry.value as num).toDouble();
+        }
+      }
+      if (newRates.isNotEmpty) {
+        // Ensure EUR is always 1.0
+        newRates['EUR'] = 1.0;
+        _rates = newRates;
+        _ratesUpdated = DateTime.now();
+        return true;
+      }
+    } catch (_) {
+      // Silent fallback — use existing rates
+    }
+    return false;
+  }
+
+  static DateTime? get ratesUpdated => _ratesUpdated;
+  static bool get isUsingLiveRates => _ratesUpdated != null;
 }
 
 /// Logo/theme library — colors and icons for known subscription services.

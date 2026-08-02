@@ -113,6 +113,8 @@ class SubscriptionProvider extends ChangeNotifier {
       }
 
       _lastMonthTotal = prefs.getDouble(_lastMonthKey) ?? 0;
+      // Fetch live exchange rates (non-blocking, silent fallback)
+      CurrencyProvider.fetchLiveRates();
       _maybeUpdateMonthlySnapshot(prefs);
 
       final changed = _rollForwardBillingDates();

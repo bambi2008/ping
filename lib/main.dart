@@ -6,6 +6,7 @@ import 'app/theme.dart';
 import 'models/subscription_provider.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,12 +35,14 @@ class PingApp extends StatelessWidget {
       darkTheme: PingTheme.dark,
       themeMode: ThemeMode.system,
       localizationsDelegates: const [
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
         Locale('en'),
+        Locale('zh'),
       ],
       initialRoute: showOnboarding ? '/onboarding' : '/dashboard',
       onGenerateRoute: (settings) {

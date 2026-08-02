@@ -27,6 +27,26 @@ class SettingsScreen extends StatelessWidget {
             provider.displayCurrency,
             onTap: () => _showCurrencyPicker(context, provider),
           ),
+          _tile(
+            context,
+            Icons.sync_alt,
+            'Exchange rates',
+            CurrencyProvider.isUsingLiveRates ? 'Live ✓' : 'Offline',
+            subtitle2: CurrencyProvider.isUsingLiveRates
+                ? 'Updated ${CurrencyProvider.ratesUpdated?.hour}:${CurrencyProvider.ratesUpdated?.minute.toString().padLeft(2, '0')}'
+                : 'Tap to refresh',
+            onTap: () async {
+              final ok = await CurrencyProvider.fetchLiveRates();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(ok ? 'Exchange rates updated' : 'Using offline rates'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
+          ),
           const SizedBox(height: 8),
           _section('Notifications'),
           Container(
@@ -115,6 +135,7 @@ class SettingsScreen extends StatelessWidget {
     String subtitle, {
     VoidCallback? onTap,
     bool isDestructive = false,
+    String? subtitle2,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 2),
@@ -131,10 +152,20 @@ class SettingsScreen extends StatelessWidget {
           title,
           style: TextStyle(color: isDestructive ? PingTheme.danger : null),
         ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-        ),
+        subtitle: subtitle2 != null
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(subtitle,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                  Text(subtitle2,
+                      style: TextStyle(fontSize: 10, color: Colors.grey[400])),
+                ],
+              )
+            : Text(
+                subtitle,
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
         trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),
         onTap: onTap,
         shape: RoundedRectangleBorder(
