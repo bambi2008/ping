@@ -12,7 +12,37 @@ class SubscriptionListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('All Subscriptions')),
+      appBar: AppBar(
+        title: const Text('All Subscriptions'),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+            child: TextField(
+              controller: _searchCtrl,
+              onChanged: (v) => setState(() => _query = v.toLowerCase()),
+              decoration: InputDecoration(
+                hintText: 'Search subscriptions...',
+                prefixIcon: const Icon(Icons.search, size: 20),
+                suffixIcon: _query.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18),
+                        onPressed: () { _searchCtrl.clear(); setState(() => _query = ''); },
+                      )
+                    : null,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+              ),
+            ),
+          ),
+        ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async => await Navigator.push(context,
             MaterialPageRoute(builder: (_) => const AddSubscriptionScreen())),
@@ -21,8 +51,24 @@ class SubscriptionListScreen extends StatelessWidget {
       ),
       body: Consumer<SubscriptionProvider>(
         builder: (context, p, _) {
-          final active = p.subscriptions.where((s) => s.isActive).toList();
-          final inactive = p.subscriptions.where((s) => !s.isActive).toList();
+          final filtered = _query.isEmpty
+              ? p.subscriptions
+              : p.subscriptions.where((s) => s.name.toLowerCase().contains(_query) || s.category.toLowerCase().contains(_query)).toList();
+          final active = filtered.where((s) => s.isActive).toList();
+          final inactive = filtered.where((s) => !s.isActive).toList();
+          if (filtered.isEmpty && _query.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off, size: 56, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  Text('No results for "\$_query"',
+                      style: TextStyle(color: Colors.grey[500], fontSize: 15)),
+                ],
+              ),
+            );
+          }
           if (p.subscriptions.isEmpty) {
             return Center(
                 child: Column(

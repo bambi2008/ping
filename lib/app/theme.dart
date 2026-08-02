@@ -27,6 +27,22 @@ class PingTheme {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           color: Colors.white,
         ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFFF1F2F6),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: primary, width: 1.5),
+          ),
+        ),
       );
 
   static ThemeData get dark => ThemeData(
@@ -45,6 +61,26 @@ class PingTheme {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           color: darkCard,
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: darkSurface,
+          border: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: const BorderRadius.all(Radius.circular(12)),
+            borderSide: BorderSide(color: primary.withValues(alpha: 0.6), width: 1.5),
+          ),
+        ),
+        dividerColor: darkSurface,
+        listTileTheme: ListTileThemeData(
+          iconColor: primary.withValues(alpha: 0.8),
         ),
       );
 }

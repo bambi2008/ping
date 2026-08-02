@@ -70,7 +70,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           body: SafeArea(
             child: p.isLoading
                 ? _buildSkeleton(context)
-                : p.subscriptions.isEmpty
+                : p.errorMessage != null
+                    ? _buildErrorState(context, p)
+                    : p.subscriptions.isEmpty
                     ? _buildEmptyState(context, p)
                     : RefreshIndicator(
                         onRefresh: () async {
@@ -95,8 +97,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildSkeleton(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+      baseColor: Theme.of(context).cardColor,
+      highlightColor: Theme.of(context).dividerColor.withValues(alpha: 0.3),
       child: Padding(
           padding: const EdgeInsets.all(16),
           child:
@@ -105,7 +107,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Container(
                 height: 180,
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20))),
             const SizedBox(height: 16),
             Row(
@@ -116,20 +118,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             margin: const EdgeInsets.symmetric(horizontal: 4),
                             height: 70,
                             decoration: BoxDecoration(
-                                color: Colors.white,
+                                color: Theme.of(context).cardColor,
                                 borderRadius: BorderRadius.circular(14)))))),
             const SizedBox(height: 20),
             Container(
                 width: 100,
                 height: 14,
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(4))),
             const SizedBox(height: 12),
             Container(
                 height: 120,
                 decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(16))),
             const SizedBox(height: 20),
             ...List.generate(
@@ -138,9 +140,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     height: 56,
                     decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(14)))),
           ])),
+    );
+  }
+
+
+  Widget _buildErrorState(BuildContext context, SubscriptionProvider p) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: PingTheme.danger.withValues(alpha: 0.08),
+              ),
+              child: const Icon(Icons.cloud_off_rounded,
+                  size: 40, color: PingTheme.danger),
+            ),
+            const SizedBox(height: 24),
+            Text('Something went wrong',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            Text(p.errorMessage ?? 'Unknown error',
+                style: TextStyle(color: Colors.grey[500], fontSize: 14, height: 1.5),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              onPressed: () {
+                p.clearAll();
+                p.init();
+              },
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

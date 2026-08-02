@@ -161,10 +161,30 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.all(Radius.circular(12))),
                 prefixIcon: Icon(Icons.category)),
-            items: SubscriptionProvider.categories
-                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                .toList(),
-            onChanged: (v) => setState(() => _category = v!),
+            items: [
+              ...SubscriptionProvider.categories.map((c) =>
+                  DropdownMenuItem(value: c, child: Text(c))),
+              if (!SubscriptionProvider.categories.contains(_category))
+                DropdownMenuItem(value: _category, child: Text(_category)),
+              const DropdownMenuItem(
+                value: '__custom__',
+                child: Row(children: [
+                  Icon(Icons.add_circle_outline, size: 18),
+                  SizedBox(width: 8),
+                  Text('Add custom...'),
+                ]),
+              ),
+            ],
+            onChanged: (v) async {
+              if (v == '__custom__') {
+                final custom = await _showCustomCategoryDialog(context);
+                if (custom != null && custom.isNotEmpty) {
+                  setState(() => _category = custom);
+                }
+              } else {
+                setState(() => _category = v!);
+              }
+            },
           ),
           const SizedBox(height: 16),
 
@@ -213,6 +233,33 @@ class _AddSubscriptionScreenState extends State<AddSubscriptionScreen> {
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14)))),
         ]),
+      ),
+    );
+  }
+
+  Future<String?> _showCustomCategoryDialog(BuildContext context) {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('New category'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Education, Fitness...',
+            border: OutlineInputBorder(),
+          ),
+          textCapitalization: TextCapitalization.words,
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Add'),
+          ),
+        ],
       ),
     );
   }
