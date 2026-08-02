@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
+import 'widgets/page_transitions.dart';
 import 'models/subscription_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/iap_provider.dart';
@@ -82,7 +83,7 @@ class _PingAppState extends State<PingApp> {
   void _navigateToHome(BuildContext context) {
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const _MainShell()),
+      SlideFadeRoute(page: const _MainShell()),
       (route) => false,
     );
   }
@@ -143,9 +144,7 @@ class _MainShellState extends State<_MainShell> {
                 HapticFeedback.lightImpact();
                 await Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const QuickAddScreen(),
-                  ),
+                  SlideFadeRoute(page: const QuickAddScreen()),
                 );
               },
               icon: const Icon(Icons.add, semanticLabel: 'Add subscription'),

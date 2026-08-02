@@ -356,7 +356,14 @@ class SettingsScreen extends StatelessWidget {
                 ),
               );
             },
-            child: const Text('Import'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+              ),
+              child: const Text('Import', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            ),
           ),
         ],
       ),

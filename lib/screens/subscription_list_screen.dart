@@ -105,10 +105,20 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
           hasScrollBody: false,
           child: Center(
             child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.subscriptions_outlined, size: 64, color: PingTheme.primary),
+              RepaintBoundary(child: Container(
+                width: 80, height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: [PingTheme.primary.withValues(alpha: 0.08), PingTheme.primaryLight.withValues(alpha: 0.04)]),
+                ),
+                child: const Icon(Icons.subscriptions_outlined, size: 36, color: PingTheme.primary),
+              )),
               const SizedBox(height: PingTheme.spaceLg),
-              Text('No subscriptions',
-                  style: Theme.of(context).textTheme.titleLarge),
+              Text('No subscriptions yet',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              const SizedBox(height: PingTheme.spaceSm),
+              Text('Add one or scan your email to discover',
+                  style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textCaption)),
               const SizedBox(height: PingTheme.spaceLg),
               PressScale(
                 onTap: () async => await Navigator.push(context,

@@ -131,16 +131,30 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         ] else ...[
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(PingTheme.space4Xl),
-              child: Column(children: [
-                Icon(Icons.event_available, size: 56, color: PingTheme.subtleText(context)),
-                const SizedBox(height: PingTheme.spaceMd),
-                Text('No bills this month',
-                    style: TextStyle(
-                        color: PingTheme.subtleText(context),
-                        fontSize: PingTheme.textBody)),
-              ]),
+            child: RepaintBoundary(
+              child: Padding(
+                padding: const EdgeInsets.all(PingTheme.space4Xl),
+                child: Column(children: [
+                  Container(
+                    width: 72, height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: PingTheme.success.withValues(alpha: 0.08),
+                    ),
+                    child: Icon(Icons.event_available, size: 32, color: PingTheme.success),
+                  ),
+                  const SizedBox(height: PingTheme.spaceLg),
+                  Text('No bills this month',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: PingTheme.textBody)),
+                  const SizedBox(height: 4),
+                  Text('You\'re in the clear 🎉',
+                      style: TextStyle(
+                          color: PingTheme.subtleText(context),
+                          fontSize: PingTheme.textCaption)),
+                ]),
+              ),
             ),
           ),
         ],
