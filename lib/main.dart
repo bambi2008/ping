@@ -10,6 +10,7 @@ import 'screens/onboarding/onboarding_flow.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/subscription_list_screen.dart';
 import 'screens/calendar_screen.dart';
+import 'screens/quick_add_screen.dart';
 import 'screens/add_subscription_screen.dart';
 import 'screens/settings_screen.dart';
 import 'package:flutter/services.dart';
@@ -126,7 +127,7 @@ class _MainShellState extends State<_MainShell> {
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const AddSubscriptionScreen(),
+                    builder: (_) => const QuickAddScreen(),
                   ),
                 );
               },

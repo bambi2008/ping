@@ -13,6 +13,7 @@ import 'add_subscription_screen.dart';
 import 'settings_screen.dart';
 import 'subscription_detail_screen.dart';
 import 'calendar_screen.dart';
+import '../services/subscription_templates.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -72,6 +73,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         child: CustomScrollView(
                           slivers: [
                             _buildHeader(context, p),
+      SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ..._buildInsights(context, p),
+            ],
+          ),
+        ),
+      ),
                             _buildTotalCard(context, p),
                             _buildQuickStats(context, p),
                             _buildTrendChart(context, p),
@@ -187,6 +199,164 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ]),
     ));
+  }
+
+
+  // ── Smart Insight Cards ──
+  List<Widget> _buildInsights(BuildContext context, SubscriptionProvider p) {
+    if (p.subscriptions.isEmpty) return [];
+
+    final insights = <Widget>[];
+    final sym = CurrencyProvider.getSymbol(p.displayCurrency);
+
+    // 1. Next bill countdown
+    final upcoming = p.upcomingBills;
+    if (upcoming.isNotEmpty) {
+      final next = upcoming.first;
+      final daysLeft = DateTime(next.date.year, next.date.month, next.date.day)
+          .difference(DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day)).inDays;
+      final isUrgent = daysLeft <= 3;
+      final color = isUrgent ? PingTheme.danger : daysLeft <= 7 ? PingTheme.warning : PingTheme.primary;
+
+      insights.add(_insightCard(
+        context,
+        icon: isUrgent ? Icons.warning_amber_rounded : Icons.schedule,
+        color: color,
+        title: isUrgent ? '⚠️ ${next.name} renews in $daysLeft ${daysLeft == 1 ? 'day' : 'days'}' : '${next.name} renews in $daysLeft days',
+        subtitle: '$sym${next.amount.toStringAsFixed(2)} on ${next.date.day}/${next.date.month}',
+        trailing: '${next.date.day}/${next.date.month}',
+      ));
+    }
+
+    // 2. Category breakdown — top spending category
+    final categoryTotals = <String, double>{};
+    for (final s in p.subscriptions.where((s) => s.isActive)) {
+      final monthly = s.billingCycle == 'yearly' ? s.amount / 12 : s.amount;
+      categoryTotals[s.category] = (categoryTotals[s.category] ?? 0) + monthly;
+    }
+    if (categoryTotals.isNotEmpty) {
+      final sorted = categoryTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      final topCat = sorted.first;
+      final pct = (topCat.value / p.totalMonthly * 100).round();
+
+      insights.add(_insightCard(
+        context,
+        icon: Icons.pie_chart_outline,
+        color: PingTheme.secondary,
+        title: '$pct% of your spend is on ${topCat.key}',
+        subtitle: '$sym${topCat.value.toStringAsFixed(2)}/mo · ${sorted.length} categor${sorted.length == 1 ? 'y' : 'ies'} total',
+      ));
+    }
+
+    // 3. Potential savings — yearly vs monthly
+    double potentialSavings = 0;
+    int switchableCount = 0;
+    for (final s in p.subscriptions.where((s) => s.isActive && s.billingCycle == 'monthly')) {
+      // Assume ~2 months free on yearly = ~17% saving
+      potentialSavings += s.amount * 2;
+      switchableCount++;
+    }
+    if (switchableCount > 0) {
+      insights.add(_insightCard(
+        context,
+        icon: Icons.savings_outlined,
+        color: PingTheme.success,
+        title: 'Save $sym${potentialSavings.toStringAsFixed(0)}/year',
+        subtitle: 'Switch $switchableCount monthly plan${switchableCount == 1 ? '' : 's'} to yearly (est. 2 months free)',
+        onTap: () {
+          // Could show a detailed savings breakdown in the future
+        },
+      ));
+    }
+
+    // 4. Most expensive subscription
+    final mostExpensive = p.subscriptions.where((s) => s.isActive).toList()
+      ..sort((a, b) {
+        final aM = a.billingCycle == 'yearly' ? a.amount / 12 : a.amount;
+        final bM = b.billingCycle == 'yearly' ? b.amount / 12 : b.amount;
+        return bM.compareTo(aM);
+      });
+    if (mostExpensive.isNotEmpty && p.subscriptions.where((s) => s.isActive).length > 1) {
+      final s = mostExpensive.first;
+      final monthly = s.billingCycle == 'yearly' ? s.amount / 12 : s.amount;
+      final pctOfTotal = (monthly / p.totalMonthly * 100).round();
+      if (pctOfTotal >= 20) {
+        insights.add(_insightCard(
+          context,
+          icon: Icons.trending_up_rounded,
+          color: PingTheme.warning,
+          title: '${s.name} is $pctOfTotal% of your spend',
+          subtitle: '$sym${monthly.toStringAsFixed(2)}/mo — consider if you still need it',
+        ));
+      }
+    }
+
+    return insights;
+  }
+
+  Widget _insightCard(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    String? trailing,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: PingTheme.spaceSm),
+      child: Material(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+          child: Container(
+            padding: const EdgeInsets.all(PingTheme.spaceLg),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+              border: Border.all(color: color.withValues(alpha: 0.12)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(PingTheme.radiusSm),
+                  ),
+                  child: Icon(icon, size: 20, color: color),
+                ),
+                const SizedBox(width: PingTheme.spaceMd),
+                Expanded(child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                      style: const TextStyle(
+                        fontSize: PingTheme.textBody,
+                        fontWeight: FontWeight.w700,
+                      )),
+                    const SizedBox(height: 2),
+                    Text(subtitle,
+                      style: TextStyle(
+                        fontSize: PingTheme.textCaption,
+                        color: PingTheme.subtleText(context),
+                      )),
+                  ],
+                )),
+                if (trailing != null)
+                  Text(trailing,
+                      style: TextStyle(
+                        fontSize: PingTheme.textSmall,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      )),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   // ── Header ──

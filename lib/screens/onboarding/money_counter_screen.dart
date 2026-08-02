@@ -2,12 +2,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../services/subscription_templates.dart';
 
 /// 烧钱计数器 — 用户点亮自己用的订阅，看着数字飙升，最后给年度震撼数字。
 /// 替代传统问卷，用视觉冲击做"洗脑"。
 class MoneyCounterScreen extends StatefulWidget {
   final VoidCallback onComplete;
-  final void Function(double monthlyEstimate)? onEstimate;
+  final void Function(double monthlyEstimate, List<String> selectedIds)? onEstimate;
 
   const MoneyCounterScreen({
     super.key,
@@ -566,7 +567,7 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
                             onPressed: () {
                               HapticFeedback.mediumImpact();
                               if (widget.onEstimate != null) {
-                                widget.onEstimate!(_targetAmount);
+                                widget.onEstimate!(_targetAmount, _selected.toList());
                               }
                               widget.onComplete();
                             },

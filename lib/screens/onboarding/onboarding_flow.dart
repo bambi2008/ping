@@ -10,6 +10,9 @@ import 'money_counter_screen.dart';
 import 'registration_screen.dart';
 import 'paywall_screen.dart';
 import 'feature_tour_screen.dart';
+import '../../models/subscription_provider.dart';
+import '../../models/subscription.dart';
+import '../../services/subscription_templates.dart';
 
 /// 完整新用户引导流程：
 /// Welcome → 烧钱计数器 → Registration → Paywall → Feature Tour → Done
@@ -23,6 +26,7 @@ class OnboardingFlow extends StatefulWidget {
 
 class _OnboardingFlowState extends State<OnboardingFlow> {
   _OnboardingStep _step = _OnboardingStep.welcome;
+  List<String> _selectedTemplateIds = [];
 
   @override
   void initState() {
@@ -50,6 +54,29 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Future<void> _completeOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarded', true);
+
+    // Pre-fill subscriptions from money counter selections
+    if (_selectedTemplateIds.isNotEmpty) {
+      final provider = context.read<SubscriptionProvider>();
+      for (final id in _selectedTemplateIds) {
+        final template = SubscriptionTemplates.all.firstWhere((t) => t.id == id, orElse: () => SubscriptionTemplates.all.first);
+        if (template != null) {
+          provider.add(Subscription(
+            id: 'template_${DateTime.now().millisecondsSinceEpoch}_$id',
+            name: template.name,
+            amount: template.defaultPrice,
+            currency: template.currency,
+            billingCycle: template.billingCycle,
+            category: template.category,
+            nextBillingDate: DateTime.now().add(Duration(days: 30 + _selectedTemplateIds.indexOf(id))),
+            paymentMethod: 'Unknown',
+            isActive: true,
+            createdAt: DateTime.now(),
+          ));
+        }
+      }
+    }
+
     widget.onComplete();
   }
 
@@ -72,8 +99,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
       case _OnboardingStep.counter:
         return MoneyCounterScreen(
           onComplete: () => _goToStep(_OnboardingStep.registration),
-          onEstimate: (monthly) {
-            // 可以把估算金额存下来，后续 dashboard 里参考
+          onEstimate: (monthly, selectedIds) {
+            _selectedTemplateIds = selectedIds;
           },
         );
 
