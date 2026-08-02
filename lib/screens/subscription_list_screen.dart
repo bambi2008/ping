@@ -5,6 +5,9 @@ import '../app/theme.dart';
 import '../models/subscription_provider.dart';
 import '../models/subscription.dart';
 import '../widgets/brand_icon.dart';
+import '../widgets/glass_card.dart';
+import '../widgets/page_transitions.dart';
+import '../widgets/cancel_celebration.dart';
 import 'subscription_detail_screen.dart';
 import 'add_subscription_screen.dart';
 
@@ -108,7 +111,7 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
               const SizedBox(height: PingTheme.spaceLg),
               FilledButton.icon(
                   onPressed: () async => await Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const AddSubscriptionScreen())),
+                      SlideFadeRoute(page: const AddSubscriptionScreen())),
                   icon: const Icon(Icons.add),
                   label: const Text('Add Your First')),
             ]),
@@ -318,118 +321,125 @@ class _SubscriptionListScreenState extends State<SubscriptionListScreen> {
     );
   }
 
-  // ── Tile with multi-action swipe ──
+  // ── Tile with swipe-to-reveal actions ──
   Widget _tile(BuildContext context, Subscription s) {
     final themeColor = s.themeColor ??
         SubscriptionTheme.categoryColors[s.category] ??
         PingTheme.primary;
 
-    return Dismissible(
-      key: Key(s.id),
-      direction: DismissDirection.horizontal,
-      background: _swipeBackground(
-        alignment: Alignment.centerLeft,
-        color: PingTheme.primary,
+    final actions = <SwipeAction>[
+      if (s.isActive)
+        SwipeAction(
+          icon: Icons.pause_circle_outline,
+          label: 'Pause',
+          color: PingTheme.warning,
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            context.read<SubscriptionProvider>().setStatus(s.id, SubscriptionStatus.paused);
+          },
+        ),
+      SwipeAction(
         icon: Icons.edit_outlined,
         label: 'Edit',
+        color: PingTheme.primary,
+        onTap: () {
+          HapticFeedback.selectionClick();
+          Navigator.push(context,
+              SlideFadeRoute(page: AddSubscriptionScreen(subscription: s)));
+        },
       ),
-      secondaryBackground: _swipeBackground(
-        alignment: Alignment.centerRight,
-        color: PingTheme.danger,
+      SwipeAction(
         icon: Icons.delete_outline,
         label: 'Delete',
-      ),
-      confirmDismiss: (direction) async {
-        if (direction == DismissDirection.startToEnd) {
-          // Edit
-          await Navigator.push(context,
-              MaterialPageRoute(builder: (_) => AddSubscriptionScreen(subscription: s)));
-          return false;
-        } else {
-          // Delete with confirmation
+        color: PingTheme.danger,
+        onTap: () async {
+          HapticFeedback.heavyImpact();
           final confirmed = await _confirmDelete(context, s.name);
           if (confirmed && context.mounted) {
             await context.read<SubscriptionProvider>().removeSubscription(s.id);
-            return false; // Don't actually dismiss, the list will rebuild
           }
-          return false;
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(
-            PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
-        padding: const EdgeInsets.symmetric(
-            horizontal: PingTheme.spaceMd, vertical: PingTheme.spaceSm + 2),
-        decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-            border: Border.all(color: PingTheme.hairlineBorder(context))),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
-          title: Text(s.name,
-              style: TextStyle(
-                  fontSize: PingTheme.textBody,
-                  fontWeight: FontWeight.w600,
-                  decoration:
-                      s.isActive ? null : TextDecoration.lineThrough)),
-          subtitle: Text(
-              '${s.currencySymbol}${s.amount.toStringAsFixed(2)} · ${s.billingCycle} · ${s.paymentMethod}',
-              style: TextStyle(
-                  fontSize: PingTheme.textCaption,
-                  color: PingTheme.subtleText(context))),
-          trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-            if (s.source == 'manual')
-              Container(
-                  margin: const EdgeInsets.only(right: PingTheme.spaceSm),
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                      color: PingTheme.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(PingTheme.radiusXs)),
-                  child: const Text('manual',
-                      style: TextStyle(fontSize: 10, color: PingTheme.primary))),
-            Icon(
-              s.isActive ? Icons.check_circle : Icons.pause_circle,
-              color: s.isActive ? PingTheme.success : PingTheme.subtleText(context),
-              size: 22,
+        },
+      ),
+    ];
+
+    return RepaintBoundary(
+      child: SwipeToReveal(
+        actions: actions,
+        revealWidth: 72,
+        child: GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            Navigator.push(context,
+                SlideFadeRoute(page: SubscriptionDetailScreen(id: s.id)));
+          },
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(
+                PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
+            padding: const EdgeInsets.symmetric(
+                horizontal: PingTheme.spaceMd, vertical: PingTheme.spaceSm + 2),
+            decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                border: Border.all(color: PingTheme.hairlineBorder(context))),
+            child: Row(
+              children: [
+                BrandIcon(name: s.name, fallbackColor: themeColor, size: 42),
+                const SizedBox(width: PingTheme.spaceMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(s.name,
+                              style: TextStyle(
+                                  fontSize: PingTheme.textBody,
+                                  fontWeight: FontWeight.w600,
+                                  decoration: s.isActive
+                                      ? null
+                                      : TextDecoration.lineThrough)),
+                          if (s.source == 'manual') ...[
+                            const SizedBox(width: 6),
+                            Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                    color: PingTheme.primary.withValues(alpha: 0.08),
+                                    borderRadius:
+                                        BorderRadius.circular(PingTheme.radiusXs)),
+                                child: const Text('manual',
+                                    style: TextStyle(
+                                        fontSize: 9,
+                                        color: PingTheme.primary,
+                                        fontWeight: FontWeight.w600))),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                          '${s.currencySymbol}${s.amount.toStringAsFixed(2)} · ${s.billingCycle} · ${s.paymentMethod}',
+                          style: TextStyle(
+                              fontSize: PingTheme.textCaption,
+                              color: PingTheme.subtleText(context))),
+                    ],
+                  ),
+                ),
+                Icon(
+                  s.isActive ? Icons.check_circle : Icons.pause_circle,
+                  color: s.isActive
+                      ? PingTheme.success
+                      : PingTheme.subtleText(context),
+                  size: 22,
+                ),
+              ],
             ),
-          ]),
-          onTap: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => SubscriptionDetailScreen(id: s.id))),
+          ),
         ),
       ),
     );
   }
 
-  Widget _swipeBackground({
-    required Alignment alignment,
-    required Color color,
-    required IconData icon,
-    required String label,
-  }) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(
-          PingTheme.spaceLg, 0, PingTheme.spaceLg, PingTheme.spaceSm),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-      ),
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: PingTheme.spaceXl),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: color, size: 22),
-        const SizedBox(width: 6),
-        Text(label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: PingTheme.textSmall,
-            )),
-      ]),
-    );
-  }
-
-  Future<bool> _confirmDelete(BuildContext context, String name) async {
+    Future<bool> _confirmDelete(BuildContext context, String name) async {
     return await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(

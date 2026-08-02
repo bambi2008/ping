@@ -22,6 +22,7 @@ import '../widgets/cancel_celebration.dart';
 import '../widgets/fire_particles.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/page_transitions.dart';
+import '../widgets/spring_refresh.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -73,9 +74,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ? _buildErrorState(context, p)
                     : p.subscriptions.isEmpty
                     ? _buildEmptyState(context, p)
-                    : RefreshIndicator(
+                    : SpringRefresh(
                         onRefresh: () async {
-                          HapticFeedback.mediumImpact();
                           await p.refresh();
                         },
                         child: CustomScrollView(
