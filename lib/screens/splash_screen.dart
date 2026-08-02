@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../app/theme.dart';
+import '../widgets/fire_particles.dart';
 
 /// Ping 启动屏 — 品牌 logo 动画，2秒后自动跳转
 class SplashScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _ctrl;
   late Animation<double> _logoScale;
   late Animation<double> _textOpacity;
+  late Animation<double> _glowPulse;
 
   @override
   void initState() {
@@ -28,7 +31,13 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _ctrl, curve: const Interval(0.4, 0.8, curve: Curves.easeIn)),
     );
 
+    // Glow pulse — infinite pulsing after logo appears
+    _glowPulse = Tween<double>(begin: 0.3, end: 0.6).animate(
+      CurvedAnimation(parent: _ctrl, curve: const Interval(0.5, 1.0, curve: Curves.easeInOut)),
+    );
+
     _ctrl.forward().then((_) {
+      HapticFeedback.lightImpact();
       Future.delayed(const Duration(milliseconds: 400), widget.onComplete);
     });
   }
@@ -58,35 +67,40 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 // Logo
-                ScaleTransition(
+                RepaintBoundary(child: ScaleTransition(
                   scale: _logoScale,
-                  child: Container(
-                    width: 100, height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [PingTheme.primary, PingTheme.primaryLight],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: PingTheme.primary.withValues(alpha: 0.4),
-                          blurRadius: 40,
-                          offset: const Offset(0, 10),
+                  child: AnimatedBuilder(
+                    animation: _ctrl,
+                    builder: (context, _) {
+                      return Container(
+                        width: 100, height: 100,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [PingTheme.primary, PingTheme.primaryLight],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: PingTheme.primary.withValues(alpha: _glowPulse.value),
+                              blurRadius: 40 + _glowPulse.value * 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Text('P',
-                        style: TextStyle(
-                          fontSize: 52,
-                          fontWeight: FontWeight.w900,
-                          color: Colors.white,
-                        )),
-                    ),
+                        child: const Center(
+                          child: Text('P',
+                            style: TextStyle(
+                              fontSize: 52,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            )),
+                        ),
+                      );
+                    },
                   ),
-                ),
+                )),
                 const SizedBox(height: 24),
                 // App name
                 FadeTransition(

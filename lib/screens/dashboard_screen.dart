@@ -172,11 +172,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: TextStyle(color: PingTheme.subtleText(context), fontSize: PingTheme.textBody, height: 1.5),
             textAlign: TextAlign.center),
         const SizedBox(height: 28),
-        FilledButton.icon(
-          onPressed: () { p.clearAll(); p.init(); },
-          icon: const Icon(Icons.refresh),
-          label: const Text('Retry'),
-          style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14)),
+        PressScale(
+          onTap: () { p.clearAll(); p.init(); },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+              boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+            ),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.refresh, color: Colors.white, size: 20),
+              SizedBox(width: 8),
+              Text('Retry', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            ]),
+          ),
         ),
       ]),
     ));
@@ -247,16 +257,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FilledButton.icon(
-              onPressed: () async {
+            PressScale(
+              onTap: () async {
                 HapticFeedback.lightImpact();
                 await Navigator.push(context, SlideFadeRoute(page: const QuickAddScreen()));
               },
-              icon: const Icon(Icons.bolt),
-              label: const Text('Quick Add'),
-              style: FilledButton.styleFrom(
+              child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(PingTheme.radiusMd)),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                  borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                  boxShadow: [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))],
+                ),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.bolt, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Quick Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                ]),
               ),
             ),
             const SizedBox(width: PingTheme.spaceMd),

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../app/theme.dart';
+import 'press_scale.dart';
 
 /// 取消庆祝 — 当用户取消订阅时显示，彩纸 + "You just saved €X/year!"
 class CancelCelebration extends StatefulWidget {
@@ -153,19 +154,19 @@ class _CancelCelebrationState extends State<CancelCelebration>
 
                         const SizedBox(height: PingTheme.space2Xl),
 
-                        SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: FilledButton(
-                            onPressed: widget.onDismiss,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: PingTheme.success,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                              ),
+                        PressScale(
+                          onTap: widget.onDismiss,
+                          child: Container(
+                            width: double.infinity, height: 50,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [PingTheme.success, PingTheme.success.withValues(alpha: 0.85)]),
+                              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                              boxShadow: [BoxShadow(color: PingTheme.success.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
                             ),
-                            child: const Text('Nice! 🎉',
-                                style: TextStyle(fontWeight: FontWeight.w700, fontSize: PingTheme.textBody)),
+                            child: const Center(
+                              child: Text('Nice! 🎉',
+                                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: PingTheme.textBody, color: Colors.white)),
+                            ),
                           ),
                         ),
                       ],

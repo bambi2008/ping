@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../app/theme.dart';
+import '../../widgets/press_scale.dart';
 import '../../services/subscription_templates.dart';
 import '../../widgets/fire_particles.dart';
 
@@ -372,24 +373,24 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
                   ),
                 ),
               ),
-            SizedBox(
-              width: double.infinity,
-              height: 54,
-              child: FilledButton(
-                onPressed: _selected.isEmpty ? null : _showReveal,
-                style: FilledButton.styleFrom(
-                  backgroundColor: _selected.isEmpty
-                      ? PingTheme.subtleText(context)
-                      : PingTheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                  ),
+            PressScale(
+              onTap: _selected.isEmpty ? null : _showReveal,
+              child: Container(
+                width: double.infinity, height: 54,
+                decoration: BoxDecoration(
+                  gradient: _selected.isEmpty ? null : LinearGradient(colors: [PingTheme.primary, PingTheme.primaryLight]),
+                  color: _selected.isEmpty ? PingTheme.subtleText(context) : null,
+                  borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                  boxShadow: _selected.isEmpty ? null : [BoxShadow(color: PingTheme.primary.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 6))],
                 ),
-                child: Text(
-                  _selected.isEmpty ? 'Tap subscriptions above' : 'See my yearly total →',
-                  style: const TextStyle(
-                    fontSize: PingTheme.textBody,
-                    fontWeight: FontWeight.w800,
+                child: Center(
+                  child: Text(
+                    _selected.isEmpty ? 'Tap subscriptions above' : 'See my yearly total →',
+                    style: const TextStyle(
+                      fontSize: PingTheme.textBody,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ),
@@ -564,28 +565,29 @@ class _MoneyCounterScreenState extends State<MoneyCounterScreen>
                           ),
                         ),
                         const SizedBox(height: PingTheme.space2Xl),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 56,
-                          child: FilledButton(
-                            onPressed: () {
-                              HapticFeedback.mediumImpact();
-                              if (widget.onEstimate != null) {
-                                widget.onEstimate!(_targetAmount, _selected.toList());
-                              }
-                              widget.onComplete();
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: PingTheme.danger,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(PingTheme.radiusMd),
-                              ),
+                        PressScale(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            if (widget.onEstimate != null) {
+                              widget.onEstimate!(_targetAmount, _selected.toList());
+                            }
+                            widget.onComplete();
+                          },
+                          child: Container(
+                            width: double.infinity, height: 56,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [PingTheme.danger, PingTheme.danger.withValues(alpha: 0.85)]),
+                              borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+                              boxShadow: [BoxShadow(color: PingTheme.danger.withValues(alpha: 0.4), blurRadius: 20, offset: const Offset(0, 8))],
                             ),
-                            child: const Text(
-                              'Stop wasting money →',
-                              style: TextStyle(
-                                fontSize: PingTheme.textBody,
-                                fontWeight: FontWeight.w800,
+                            child: const Center(
+                              child: Text(
+                                'Stop wasting money →',
+                                style: TextStyle(
+                                  fontSize: PingTheme.textBody,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
