@@ -6,13 +6,13 @@ import '../../app/theme.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/iap_provider.dart';
 import 'welcome_screen.dart';
-import 'survey_screen.dart';
+import 'money_counter_screen.dart';
 import 'registration_screen.dart';
 import 'paywall_screen.dart';
 import 'feature_tour_screen.dart';
 
-/// Orchestrates the full onboarding flow:
-/// Welcome → Survey → Registration → Paywall → Feature Tour → Done
+/// 完整新用户引导流程：
+/// Welcome → 烧钱计数器 → Registration → Paywall → Feature Tour → Done
 class OnboardingFlow extends StatefulWidget {
   final VoidCallback onComplete;
   const OnboardingFlow({super.key, required this.onComplete});
@@ -27,7 +27,6 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   @override
   void initState() {
     super.initState();
-    // Check if user already completed some steps (e.g. returning after crash)
     _restoreState();
   }
 
@@ -37,10 +36,8 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
     final iap = context.read<IAPProvider>();
 
     if (auth.isLoggedIn && iap.hasAccess) {
-      // Already registered + has access — skip to main
       widget.onComplete();
     } else if (auth.isLoggedIn && !iap.hasAccess) {
-      // Registered but no subscription — go to paywall
       setState(() => _step = _OnboardingStep.paywall);
     }
   }
@@ -70,10 +67,15 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   Widget _buildCurrentStep() {
     switch (_step) {
       case _OnboardingStep.welcome:
-        return WelcomeScreen(onNext: () => _goToStep(_OnboardingStep.survey));
+        return WelcomeScreen(onNext: () => _goToStep(_OnboardingStep.counter));
 
-      case _OnboardingStep.survey:
-        return SurveyScreen(onComplete: () => _goToStep(_OnboardingStep.registration));
+      case _OnboardingStep.counter:
+        return MoneyCounterScreen(
+          onComplete: () => _goToStep(_OnboardingStep.registration),
+          onEstimate: (monthly) {
+            // 可以把估算金额存下来，后续 dashboard 里参考
+          },
+        );
 
       case _OnboardingStep.registration:
         return RegistrationScreen(onComplete: () => _goToStep(_OnboardingStep.paywall));
@@ -87,4 +89,4 @@ class _OnboardingFlowState extends State<OnboardingFlow> {
   }
 }
 
-enum _OnboardingStep { welcome, survey, registration, paywall, tour }
+enum _OnboardingStep { welcome, counter, registration, paywall, tour }
