@@ -4,7 +4,9 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'app/theme.dart';
 import 'models/subscription_provider.dart';
-import 'screens/onboarding_screen.dart';
+import 'providers/auth_provider.dart';
+import 'providers/iap_provider.dart';
+import 'screens/onboarding/onboarding_flow.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/subscription_list_screen.dart';
 import 'screens/calendar_screen.dart';
@@ -20,8 +22,12 @@ void main() async {
   final hasOnboarded = prefs.getBool('onboarded') ?? false;
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => SubscriptionProvider()..init(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()..init()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()..init()),
+        ChangeNotifierProvider(create: (_) => IAPProvider()..init()),
+      ],
       child: PingApp(showOnboarding: !hasOnboarded),
     ),
   );
@@ -49,22 +55,22 @@ class PingApp extends StatelessWidget {
         Locale('en'),
         Locale('zh'),
       ],
-      initialRoute: showOnboarding ? '/onboarding' : '/home',
-      onGenerateRoute: (settings) {
-        switch (settings.name) {
-          case '/onboarding':
-            return MaterialPageRoute(builder: (_) => const OnboardingScreen());
-          case '/home':
-            return MaterialPageRoute(builder: (_) => const _MainShell());
-          default:
-            return MaterialPageRoute(builder: (_) => const _MainShell());
-        }
-      },
+      home: showOnboarding
+          ? OnboardingFlow(onComplete: () => _navigateToHome(context))
+          : const _MainShell(),
+    );
+  }
+
+  void _navigateToHome(BuildContext context) {
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const _MainShell()),
+      (route) => false,
     );
   }
 }
 
-/// Bottom-nav shell hosting Dashboard, List, and Settings.
+/// Bottom-nav shell hosting Dashboard, List, Calendar, and Settings.
 class _MainShell extends StatefulWidget {
   const _MainShell();
 
@@ -84,12 +90,36 @@ class _MainShellState extends State<_MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final iap = context.watch<IAPProvider>();
+
+    // If trial expired and no active subscription, show paywall again
+    if (iap.isExpired && (ModalRoute.of(context)?.isCurrent ?? false)) {
+      // Show banner but don't block
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Your trial has ended. Subscribe to continue.'),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              action: SnackBarAction(
+                label: 'Subscribe',
+                onPressed: () {
+                  // Navigate to settings or paywall
+                },
+              ),
+            ),
+          );
+        }
+      });
+    }
+
     return Scaffold(
       body: IndexedStack(
         index: _index,
         children: _screens,
       ),
-      floatingActionButton: _index == 0 || _index == 1
+      floatingActionButton: _index <= 2
           ? FloatingActionButton.extended(
               onPressed: () async {
                 HapticFeedback.lightImpact();
@@ -100,7 +130,7 @@ class _MainShellState extends State<_MainShell> {
                   ),
                 );
               },
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add, semanticLabel: 'Add subscription'),
               label: const Text('Add'),
             )
           : null,

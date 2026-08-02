@@ -6,6 +6,9 @@ import 'package:url_launcher/url_launcher.dart';
 import '../app/theme.dart';
 import '../models/subscription.dart';
 import '../models/subscription_provider.dart';
+import '../providers/auth_provider.dart';
+import '../providers/iap_provider.dart';
+import 'onboarding/paywall_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -120,6 +123,9 @@ class SettingsScreen extends StatelessWidget {
             onTap: () => _confirmClear(context, provider),
             isDestructive: true,
           ),
+          const SizedBox(height: PingTheme.spaceSm),
+          _section('Subscription'),
+          _subscriptionStatus(context),
           const SizedBox(height: PingTheme.spaceSm),
           _section('About'),
           _tile(
@@ -410,6 +416,69 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _subscriptionStatus(BuildContext context) {
+    final iap = context.watch<IAPProvider>();
+    final auth = context.watch<AuthProvider>();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+      ),
+      child: Column(children: [
+        // Account info
+        ListTile(
+          leading: Icon(
+            auth.user?.provider.icon ?? Icons.person,
+            color: PingTheme.primary,
+          ),
+          title: const Text('Account'),
+          subtitle: Text(auth.isLoggedIn
+              ? auth.user!.email
+              : 'Not signed in'),
+          trailing: auth.isLoggedIn
+              ? TextButton(
+                  onPressed: () async {
+                    await auth.signOut();
+                  },
+                  child: const Text('Sign out',
+                      style: TextStyle(color: PingTheme.danger)),
+                )
+              : null,
+        ),
+        Divider(height: 1, color: PingTheme.hairlineBorder(context)),
+        // Subscription status
+        ListTile(
+          leading: Icon(
+            iap.isOnTrial ? Icons.card_giftcard : Icons.workspace_premium,
+            color: iap.hasAccess ? PingTheme.success : PingTheme.danger,
+          ),
+          title: Text(
+            iap.isOnTrial
+                ? 'Free Trial'
+                : iap.hasAccess
+                    ? 'Ping ${iap.plan.label}'
+                    : 'Expired',
+          ),
+          subtitle: Text(iap.isOnTrial
+              ? '${iap.trialDaysLeft} days left — then ${iap.plan.price}${iap.plan.period}'
+              : iap.hasAccess && iap.subExpiry != null
+                  ? 'Renews \${iap.subExpiry!.day}/\${iap.subExpiry!.month}/\${iap.subExpiry!.year}'
+                  : 'Tap to resubscribe'),
+          trailing: const Icon(Icons.chevron_right, size: 20, color: PingTheme.primary),
+          onTap: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (_) => PaywallScreen(onComplete: () => Navigator.pop(context))));
+          },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(PingTheme.radiusMd),
+          ),
+        ),
+      ]),
     );
   }
 
